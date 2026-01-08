@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Calc Pro</title>
+    
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="manifest" id="manifest-placeholder">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* (Запазваме същия стил от предния вариант за консистенция) */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        .input-section { max-width: 500px; margin: 0 auto; }
+        h1 { text-align: center; font-size: 22px; margin-bottom: 20px; color: #2c3e50; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        
+        .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; }
+        .toggle-btn { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; background: #f8f9fa; }
+        .toggle-btn.active { background: #3498db; color: white; border-color: #2980b9; }
+
+        .btn-calc { width: 100%; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .price-total { margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 10px; text-align: center; }
+        
+        .history-section { margin-top: 30px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+        .btn-delete { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="input-section">
+            <h1>⚡ EV Calc Pro</h1>
+
+            <div class="toggle-container">
+                <button id="s_summer" class="toggle-btn active" onclick="setSeason('summer')">Лято (23-07)</button>
+                <button id="s_winter" class="toggle-btn" onclick="setSeason('winter')">Зима (22-06)</button>
+            </div>
+
+            <div class="toggle-container">
+                <button id="m_start" class="toggle-btn active" onclick="setMode('start')">Нач. час</button>
+                <button id="m_range" class="toggle-btn" onclick="setMode('range')">Интервал</button>
+                <button id="m_kwh" class="toggle-btn" onclick="setMode('kwh')">kWh</button>
+            </div>
+
+            <div id="batteryFields">
+                <div class="grid">
+                    <div class="input-group"><label>Текущ %</label><input type="number" id="curPct" value="20"></div>
+                    <div class="input-group"><label>Желан %</label><input type="number" id="tarPct" value="80"></div>
+                </div>
+                <div class="grid">
+                    <div class="input-group"><label>Капацитет</label><input type="number" id="cap" value="84"></div>
+                    <div class="input-group"><label>Мощност</label><input type="number" id="pwr" value="2.3"></div>
+                </div>
+            </div>
+
+            <div id="kwhField" style="display: none;" class="input-group">
+                <label>Общо kWh:</label>
+                <input type="number" id="manualKwh" placeholder="45.5">
+            </div>
+
+            <div class="grid">
+                <div class="input-group"><label>Начало</label><input type="date" id="d1"><input type="time" id="t1" value="22:00"></div>
+                <div id="endGroup" class="input-group" style="display:none;"><label>Край</label><input type="date" id="d2"><input type="time" id="t2" value="08:00"></div>
+            </div>
+
+            <button class="btn-calc" onclick="calculate()">ИЗЧИСЛИ И ЗАПИШИ</button>
+
+            <div id="resultArea" class="result" style="display: none;">
+                <div class="price-total">
+                    <b id="outPriceBGN" style="color:#2e7d32; font-size: 1.4em;"></b><br>
+                    <span id="outPriceEUR" style="color:#666;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3>📋 История</h3>
+            <table id="historyTable">
+                <thead><tr><th>Дата</th><th>kWh</th><th>Цена лв.</th><th></th></tr></thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        /* --- PWA ДИНАМИЧЕН МАНИФЕСТ --- */
+        const manifest = {
+            "name": "EV Calculator Pro",
+            "short_name": "EV Calc",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#2c3e50",
+            "theme_color": "#2c3e50",
+            "icons": [{
+                "src": "https://cdn-icons-png.flaticon.com/512/3104/3104859.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        document.querySelector('#manifest-placeholder').setAttribute('href', URL.createObjectURL(blob));
+
+        /* --- SERVICE WORKER (Офлайн работа) --- */
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
+                self.addEventListener('fetch', function(event) {});
+            `));
+        }
+
+        /* --- ЛОГИКА НА КАЛКУЛАТОРА --- */
+        const EUR_RATE = 1.95583;
+        let season = 'summer';
+        let mode = 'start';
+
+        document.getElementById('d1').valueAsDate = new Date();
+        document.getElementById('d2').valueAsDate = new Date();
+
+        function setSeason(s) {
+            season = s;
+            document.getElementById('s_summer').className = s === 'summer' ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('s_winter').className = s === 'winter' ? 'toggle-btn active' : 'toggle-btn';
+        }
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('m_start').className = m === 'start' ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('m_range').className = m === 'range' ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('m_kwh').className = m === 'kwh' ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('batteryFields').style.display = m === 'kwh' ? 'none' : 'block';
+            document.getElementById('kwhField').style.display = m === 'kwh' ? 'block' : 'none';
+            document.getElementById('endGroup').style.display = m === 'start' ? 'none' : 'block';
+        }
+
+        function calculate() {
+            const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
+            const start = new Date(document.getElementById('d1').value + ' ' + document.getElementById('t1').value);
+            let end, totalKwh;
+
+            if (mode === 'start') {
+                const c = parseFloat(document.getElementById('cap').value);
+                const p = parseFloat(document.getElementById('pwr').value);
+                totalKwh = ((document.getElementById('tarPct').value - document.getElementById('curPct').value) / 100) * c;
+                end = new Date(start.getTime() + (totalKwh / p) * 3600000);
+            } else {
+                end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
+                totalKwh = (mode === 'kwh') ? parseFloat(document.getElementById('manualKwh').value) : ((end - start) / 3600000) * parseFloat(document.getElementById('pwr').value);
+            }
+
+            if (end <= start || isNaN(totalKwh)) { alert("Грешка!"); return; }
+
+            let nightKwh = 0, dayKwh = 0;
+            const kwhPerMin = totalKwh / ((end - start) / 60000);
+            let current = new Date(start);
+            while (current < end) {
+                let h = current.getHours();
+                let isNight = (nightLimit.s > nightLimit.e) ? (h >= nightLimit.s || h < nightLimit.e) : (h >= nightLimit.s && h < nightLimit.e);
+                if (isNight) nightKwh += kwhPerMin; else dayKwh += kwhPerMin;
+                current.setMinutes(current.getMinutes() + 1);
+            }
+
+            const pBGN = (nightKwh * 0.173) + (dayKwh * 0.293);
+            const pEUR = pBGN / EUR_RATE;
+
+            document.getElementById('outPriceBGN').textContent = pBGN.toFixed(2) + " лв.";
+            document.getElementById('outPriceEUR').textContent = "≈ " + pEUR.toFixed(2) + " €";
+            document.getElementById('resultArea').style.display = 'block';
+
+            saveToHistory({ date: start.toLocaleDateString('bg-BG'), kwh: totalKwh.toFixed(1), bgn: pBGN.toFixed(2) });
+        }
+
+        function saveToHistory(item) {
+            let history = JSON.parse(localStorage.getItem('ev_h') || '[]');
+            item.id = Date.now();
+            history.unshift(item);
+            localStorage.setItem('ev_h', JSON.stringify(history.slice(0, 20)));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            let history = JSON.parse(localStorage.getItem('ev_h') || '[]');
+            document.getElementById('historyBody').innerHTML = history.map(i => `
+                <tr>
+                    <td>${i.date}</td>
+                    <td>${i.kwh}</td>
+                    <td>${i.bgn}</td>
+                    <td><button class="btn-delete" onclick="deleteEntry(${i.id})">✕</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteEntry(id) {
+            let history = JSON.parse(localStorage.getItem('ev_h') || '[]');
+            localStorage.setItem('ev_h', JSON.stringify(history.filter(i => i.id !== id)));
+            renderHistory();
+        }
+
+        renderHistory();
+    </script>
+</body>
+</html>
