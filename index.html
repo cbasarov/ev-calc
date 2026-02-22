@@ -23,10 +23,20 @@
         .input-group { margin-bottom: 12px; }
         label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        
+        .check-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #2c3e50; }
+        .check-wrap input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .disabled-field { opacity: 0.3; pointer-events: none; }
+
         .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
         .toggle-btn { flex: 1; min-width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; background: #f8f9fa; }
         .toggle-btn.active { background: #3498db; color: white; border-color: #2980b9; }
-        .btn-calc { width: 100%; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        .calc-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; margin-top: 10px; }
+        .btn-calc { padding: 15px; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .btn-only-calc { background: #95a5a6; color: white; }
+        .btn-save-calc { background: #27ae60; color: white; }
+
         .actions { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
         .btn-action { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; color: white; }
         .btn-ewelink { background: #00a8ff; }
@@ -37,8 +47,8 @@
         table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 600px; }
         th { background: #f4f4f4; padding: 10px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
-        .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 8px; border-radius: 4px; }
-        .calc-result-hint { background: #e8f4fd; border-left: 4px solid #3498db; padding: 10px; margin-top: 10px; font-size: 13px; display: none; border-radius: 4px; }
+        .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
+        .calc-result-hint { background: #e8f4fd; border-left: 4px solid #3498db; padding: 15px; margin-top: 15px; font-size: 13px; display: none; border-radius: 4px; line-height: 1.5; }
         .badge-save { background: #2ecc71; color: white; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
@@ -73,12 +83,25 @@
                     <div class="input-group"><label id="txt-curPct">Текущ %</label><input type="number" id="curPct" value="20"></div>
                     <div class="input-group"><label id="txt-tarPct">Желан %</label><input type="number" id="tarPct" value="80"></div>
                 </div>
+                
                 <div class="grid-3">
                     <div class="input-group"><label id="txt-cap">Батерия (kWh)</label><input type="number" id="cap" value="84"></div>
                     <div class="input-group"><label id="txt-pwr">Мощност (kW)</label><input type="number" id="pwr" value="2.3"></div>
-                    <div class="input-group"><label id="txt-cons">Разход (kWh/100)</label><input type="number" id="cons" value="18"></div>
+                    <div class="input-group" id="consGroup">
+                        <div class="check-wrap" style="margin-bottom:0">
+                            <input type="checkbox" id="useCons" checked onclick="updateToggles()">
+                            <label id="txt-cons" style="margin:0">Разход (kWh/100)</label>
+                        </div>
+                        <input type="number" id="cons" value="18">
+                    </div>
                 </div>
-                <div class="grid">
+                
+                <div class="check-wrap">
+                    <input type="checkbox" id="useFuel" checked onclick="updateToggles()">
+                    <span id="txt-use-fuel">Изчисли сравнение с гориво</span>
+                </div>
+
+                <div class="grid" id="fuelInputs">
                    <div class="input-group"><label id="txt-fuel-cons">Разход Гориво (L/100km)</label><input type="number" id="fuelCons" value="7"></div>
                    <div class="input-group"><label id="txt-fuel-price">Цена Гориво (€/L)</label><input type="number" id="fuelPrice" value="1.33"></div>
                 </div>
@@ -95,7 +118,10 @@
 
             <div id="calc-hint" class="calc-result-hint"></div>
 
-            <button class="btn-calc" id="txt-calcBtn" onclick="calculate()">ИЗЧИСЛИ И ЗАПИШИ</button>
+            <div class="calc-actions">
+                <button class="btn-calc btn-only-calc" id="txt-calcOnly" onclick="calculate(false)">САМО ИЗЧИСЛИ</button>
+                <button class="btn-calc btn-save-calc" id="txt-calcBtn" onclick="calculate(true)">ИЗЧИСЛИ И ЗАПИШИ</button>
+            </div>
 
             <div class="actions">
                 <button class="btn-action btn-ewelink" id="txt-import" onclick="document.getElementById('fileInput').click()">📥 eWeLink</button>
@@ -136,9 +162,9 @@
                 summer: "Лято (23-07)", winter: "Зима (22-06)", mStart: "Нач. час", mTarget: "Готова в", mRange: "Интервал",
                 curPct: "Текущ %", tarPct: "Желан %", cap: "Батерия (kWh)", pwr: "Мощност (kW)", cons: "Разход (kWh/100)",
                 fuelCons: "Разход Гориво (л/100)", fuelPrice: "Цена Гориво (€/л)", manKwh: "Общо kWh:", dateStart: "Начало", dateEnd: "Край / Готова в",
-                calc: "ИЗЧИСЛИ И ЗАПИШИ", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 Дневник",
+                calc: "ИЗЧИСЛИ И ЗАПИШИ", calcOnly: "САМО ИЗЧИСЛИ", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 Дневник",
                 thPeriod: "Период", thTotal: "kWh", thAdded: "Пробег", thCost: "Цена (€)", thSaved: "Спестено (€)",
-                auto: "Авто", hintStart: "Започнете в: "
+                useFuel: "Изчисли сравнение с гориво", hintRes: "Резултат: "
             },
             en: {
                 title: "⚡ EV Calc Pro (€)",
@@ -146,13 +172,34 @@
                 summer: "Summer (23-07)", winter: "Winter (22-06)", mStart: "Start At", mTarget: "Ready At", mRange: "Range",
                 curPct: "Current %", tarPct: "Target %", cap: "Battery (kWh)", pwr: "Power (kW)", cons: "Cons. (kWh/100)",
                 fuelCons: "Fuel Cons. (l/100)", fuelPrice: "Fuel Price (€/L)", manKwh: "Total kWh:", dateStart: "Start", dateEnd: "End / Ready At",
-                calc: "CALCULATE & SAVE", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 History",
+                calc: "CALCULATE & SAVE", calcOnly: "CALC ONLY", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 History",
                 thPeriod: "Period", thTotal: "kWh", thAdded: "Range", thCost: "Cost (€)", thSaved: "Saved (€)",
-                auto: "Auto", hintStart: "Start at: "
+                useFuel: "Calculate fuel comparison", hintRes: "Result: "
             }
         };
 
         function setLanguage(l) { lang = l; localStorage.setItem('ev_lang', l); updateUI(); }
+
+        function updateToggles() {
+            const fuelCheck = document.getElementById('useFuel').checked;
+            const consCheck = document.getElementById('useCons').checked;
+            
+            document.getElementById('fuelInputs').classList.toggle('disabled-field', !fuelCheck);
+            document.getElementById('cons').classList.toggle('disabled-field', !consCheck);
+            
+            // Запазване на състоянието
+            localStorage.setItem('ev_opt_fuel', fuelCheck);
+            localStorage.setItem('ev_opt_cons', consCheck);
+        }
+
+        function loadToggles() {
+            const fuelSaved = localStorage.getItem('ev_opt_fuel');
+            const consSaved = localStorage.getItem('ev_opt_cons');
+            
+            if (fuelSaved !== null) document.getElementById('useFuel').checked = (fuelSaved === 'true');
+            if (consSaved !== null) document.getElementById('useCons').checked = (consSaved === 'true');
+            updateToggles();
+        }
 
         function updateUI() {
             const t = i18n[lang];
@@ -171,9 +218,11 @@
             document.getElementById('txt-fuel-cons').innerText = t.fuelCons;
             document.getElementById('txt-fuel-price').innerText = t.fuelPrice;
             document.getElementById('txt-manualKwh').innerText = t.manKwh;
+            document.getElementById('txt-use-fuel').innerText = t.useFuel;
             document.getElementById('txt-date1').innerText = (mode === 'target') ? t.dateEnd : t.dateStart;
             document.getElementById('txt-date2').innerText = t.dateEnd;
             document.getElementById('txt-calcBtn').innerText = t.calc;
+            document.getElementById('txt-calcOnly').innerText = t.calcOnly;
             document.getElementById('txt-import').innerText = t.import;
             document.getElementById('txt-export').innerText = t.export;
             document.getElementById('txt-history-title').innerText = t.history;
@@ -206,7 +255,7 @@
             updateUI();
         }
 
-        function calculate() {
+        function calculate(shouldSave = true) {
             const startOrTarget = new Date(document.getElementById('d1').value + ' ' + document.getElementById('t1').value);
             let start, end, totalKwh;
             const c = parseFloat(document.getElementById('cap').value);
@@ -220,18 +269,16 @@
                 totalKwh = ((document.getElementById('tarPct').value - document.getElementById('curPct').value) / 100) * c;
                 end = startOrTarget;
                 start = new Date(end.getTime() - (totalKwh / p) * 3600000);
-                const hBox = document.getElementById('calc-hint');
-                hBox.style.display = 'block';
-                hBox.innerText = i18n[lang].hintStart + start.toLocaleString(undefined, {hour:'2-digit', minute:'2-digit', hour12:false});
             } else {
                 start = startOrTarget;
                 end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
                 totalKwh = (mode === 'kwh') ? parseFloat(document.getElementById('manualKwh').value) : ((end - start) / 3600000) * p;
             }
-            processAndSave(start, end, totalKwh);
+            
+            processCalculation(start, end, totalKwh, shouldSave);
         }
 
-        function processAndSave(start, end, totalKwh) {
+        function processCalculation(start, end, totalKwh, shouldSave) {
             const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
             let nightKwh = 0, dayKwh = 0;
             const minutes = Math.max(1, Math.abs(end - start) / 60000);
@@ -242,36 +289,57 @@
             while (curr < finish) {
                 let h = curr.getHours();
                 let isNight = (nightLimit.s > nightLimit.e) ? (h >= nightLimit.s || h < nightLimit.e) : (h >= nightLimit.s && h < nightLimit.e);
-                // Нови цени в Евро: Дневна 0.15, Нощна 0.088
                 if (isNight) nightKwh += kwhPerMin; else dayKwh += kwhPerMin;
                 curr.setMinutes(curr.getMinutes() + 1);
             }
 
             const costEV = (nightKwh * 0.088) + (dayKwh * 0.150);
-            const evCons = parseFloat(document.getElementById('cons').value);
-            const addedRange = (totalKwh / evCons) * 100;
             
-            const fCons = parseFloat(document.getElementById('fuelCons').value);
-            const fPrice = parseFloat(document.getElementById('fuelPrice').value);
-            const costFuel = (addedRange / 100) * fCons * fPrice;
-            const saved = costFuel - costEV;
+            // Логика за пробег
+            let addedRange = 0;
+            const useCons = document.getElementById('useCons').checked;
+            if (useCons) {
+                const evCons = parseFloat(document.getElementById('cons').value);
+                addedRange = (totalKwh / evCons) * 100;
+            }
+            
+            // Логика за гориво
+            let saved = 0;
+            const useFuel = document.getElementById('useFuel').checked;
+            if (useFuel && useCons) {
+                const fCons = parseFloat(document.getElementById('fuelCons').value);
+                const fPrice = parseFloat(document.getElementById('fuelPrice').value);
+                const costFuel = (addedRange / 100) * fCons * fPrice;
+                saved = costFuel - costEV;
+            }
 
-            saveToHistory({
+            const resultObj = {
                 start: start.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}),
                 end: end.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}),
                 total: totalKwh.toFixed(1),
                 range: addedRange.toFixed(0),
                 cost: costEV.toFixed(2),
                 saved: saved.toFixed(2)
-            });
+            };
+
+            const hBox = document.getElementById('calc-hint');
+            hBox.style.display = 'block';
+            hBox.innerHTML = `
+                <strong>${i18n[lang].hintRes}</strong><br>
+                ${i18n[lang].thPeriod}: ${resultObj.start} - ${resultObj.end}<br>
+                ${i18n[lang].thTotal}: ${resultObj.total} kWh ${useCons ? `(+${resultObj.range} km)` : ''}<br>
+                ${i18n[lang].thCost}: € ${resultObj.cost} ${useFuel ? `| ${i18n[lang].thSaved}: € ${resultObj.saved}` : ''}
+            `;
+
+            if (shouldSave) saveToHistory(resultObj);
         }
 
-        function saveToHistory(item, render = true) {
+        function saveToHistory(item) {
             let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
             item.id = Date.now() + Math.random();
             history.unshift(item);
             localStorage.setItem('ev_euro_v1', JSON.stringify(history.slice(0, 100)));
-            if (render) renderHistory();
+            renderHistory();
         }
 
         function renderHistory() {
@@ -289,9 +357,11 @@
         }
 
         function deleteEntry(id) {
-            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            localStorage.setItem('ev_euro_v1', JSON.stringify(history.filter(i => i.id !== id)));
-            renderHistory();
+            if(confirm(lang === 'bg' ? 'Изтриване на записа?' : 'Delete this entry?')) {
+                let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
+                localStorage.setItem('ev_euro_v1', JSON.stringify(history.filter(i => i.id !== id)));
+                renderHistory();
+            }
         }
 
         function exportToCSV() {
@@ -304,6 +374,7 @@
             link.click();
         }
 
+        loadToggles();
         updateUI();
     </script>
 </body>
