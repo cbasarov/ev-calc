@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EV Calc Pro - Euro Edition</title>
     
-    <meta name="theme-color" content="#2c3e50">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #2c3e50, #4ca1af); min-height: 100vh; padding: 10px; }
@@ -17,6 +16,7 @@
 
         h1 { text-align: center; font-size: 22px; margin-bottom: 15px; color: #2c3e50; }
         .tariff-info { text-align: center; font-size: 11px; color: #666; margin-bottom: 15px; background: #f0f2f5; padding: 8px; border-radius: 8px; }
+        
         .input-section { max-width: 600px; margin: 0 auto; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
@@ -42,6 +42,7 @@
         .btn-ewelink { background: #00a8ff; }
         .btn-export { background: #34495e; }
         #fileInput { display: none; }
+
         .history-section { margin-top: 30px; }
         .table-wrapper { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 600px; }
@@ -62,9 +63,7 @@
 
         <div class="input-section">
             <h1 id="txt-title">⚡ EV Calc Pro (€)</h1>
-            <div class="tariff-info" id="txt-tariff">
-                Day: 0.150 € | Night: 0.088 € | Fuel: 1.33 €/L
-            </div>
+            <div class="tariff-info" id="txt-tariff">Day: 0.150 € | Night: 0.088 €</div>
 
             <div class="toggle-container">
                 <button id="s_summer" class="toggle-btn active" onclick="setSeason('summer')">Лято (23-07)</button>
@@ -103,7 +102,7 @@
 
                 <div class="grid" id="fuelInputs">
                    <div class="input-group"><label id="txt-fuel-cons">Разход Гориво (L/100km)</label><input type="number" id="fuelCons" value="7"></div>
-                   <div class="input-group"><label id="txt-fuel-price">Цена Гориво (€/L)</label><input type="number" id="fuelPrice" value="1.33"></div>
+                   <div class="input-group"><label id="txt-fuel-price">Цена Гориво (€/L)</label><input type="number" id="fuelPrice" value="1.33" oninput="saveFuelPrice()"></div>
                 </div>
             </div>
 
@@ -158,7 +157,7 @@
         const i18n = {
             bg: {
                 title: "⚡ EV Calc Pro (€)",
-                tariff: "Дневна: 0.150 € | Нощна: 0.088 € | Гориво: 1.33 €/л",
+                tariff: "Дневна: 0.150 € | Нощна: 0.088 €",
                 summer: "Лято (23-07)", winter: "Зима (22-06)", mStart: "Нач. час", mTarget: "Готова в", mRange: "Интервал",
                 curPct: "Текущ %", tarPct: "Желан %", cap: "Батерия (kWh)", pwr: "Мощност (kW)", cons: "Разход (kWh/100)",
                 fuelCons: "Разход Гориво (л/100)", fuelPrice: "Цена Гориво (€/л)", manKwh: "Общо kWh:", dateStart: "Начало", dateEnd: "Край / Готова в",
@@ -168,7 +167,7 @@
             },
             en: {
                 title: "⚡ EV Calc Pro (€)",
-                tariff: "Day: 0.150 € | Night: 0.088 € | Fuel: 1.33 €/L",
+                tariff: "Day: 0.150 € | Night: 0.088 €",
                 summer: "Summer (23-07)", winter: "Winter (22-06)", mStart: "Start At", mTarget: "Ready At", mRange: "Range",
                 curPct: "Current %", tarPct: "Target %", cap: "Battery (kWh)", pwr: "Power (kW)", cons: "Cons. (kWh/100)",
                 fuelCons: "Fuel Cons. (l/100)", fuelPrice: "Fuel Price (€/L)", manKwh: "Total kWh:", dateStart: "Start", dateEnd: "End / Ready At",
@@ -178,28 +177,20 @@
             }
         };
 
-        function setLanguage(l) { lang = l; localStorage.setItem('ev_lang', l); updateUI(); }
-
         function updateToggles() {
             const fuelCheck = document.getElementById('useFuel').checked;
             const consCheck = document.getElementById('useCons').checked;
-            
             document.getElementById('fuelInputs').classList.toggle('disabled-field', !fuelCheck);
             document.getElementById('cons').classList.toggle('disabled-field', !consCheck);
-            
-            // Запазване на състоянието
             localStorage.setItem('ev_opt_fuel', fuelCheck);
             localStorage.setItem('ev_opt_cons', consCheck);
         }
 
-        function loadToggles() {
-            const fuelSaved = localStorage.getItem('ev_opt_fuel');
-            const consSaved = localStorage.getItem('ev_opt_cons');
-            
-            if (fuelSaved !== null) document.getElementById('useFuel').checked = (fuelSaved === 'true');
-            if (consSaved !== null) document.getElementById('useCons').checked = (consSaved === 'true');
-            updateToggles();
+        function saveFuelPrice() {
+            localStorage.setItem('ev_last_fuel_price', document.getElementById('fuelPrice').value);
         }
+
+        function setLanguage(l) { lang = l; localStorage.setItem('ev_lang', l); updateUI(); }
 
         function updateUI() {
             const t = i18n[lang];
@@ -233,9 +224,6 @@
             document.getElementById('th-saved').innerText = t.thSaved;
             renderHistory();
         }
-
-        document.getElementById('d1').valueAsDate = new Date();
-        document.getElementById('d2').valueAsDate = new Date();
 
         function setSeason(s) {
             season = s;
@@ -274,7 +262,6 @@
                 end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
                 totalKwh = (mode === 'kwh') ? parseFloat(document.getElementById('manualKwh').value) : ((end - start) / 3600000) * p;
             }
-            
             processCalculation(start, end, totalKwh, shouldSave);
         }
 
@@ -294,28 +281,22 @@
             }
 
             const costEV = (nightKwh * 0.088) + (dayKwh * 0.150);
-            
-            // Логика за пробег
             let addedRange = 0;
-            const useCons = document.getElementById('useCons').checked;
-            if (useCons) {
-                const evCons = parseFloat(document.getElementById('cons').value);
-                addedRange = (totalKwh / evCons) * 100;
+            if (document.getElementById('useCons').checked) {
+                addedRange = (totalKwh / parseFloat(document.getElementById('cons').value)) * 100;
             }
             
-            // Логика за гориво
             let saved = 0;
-            const useFuel = document.getElementById('useFuel').checked;
-            if (useFuel && useCons) {
-                const fCons = parseFloat(document.getElementById('fuelCons').value);
+            if (document.getElementById('useFuel').checked && document.getElementById('useCons').checked) {
                 const fPrice = parseFloat(document.getElementById('fuelPrice').value);
-                const costFuel = (addedRange / 100) * fCons * fPrice;
-                saved = costFuel - costEV;
+                const fCons = parseFloat(document.getElementById('fuelCons').value);
+                saved = ((addedRange / 100) * fCons * fPrice) - costEV;
             }
 
-            const resultObj = {
-                start: start.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}),
-                end: end.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}),
+            const result = {
+                id: Date.now(),
+                start: start.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
+                end: end.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
                 total: totalKwh.toFixed(1),
                 range: addedRange.toFixed(0),
                 cost: costEV.toFixed(2),
@@ -324,21 +305,15 @@
 
             const hBox = document.getElementById('calc-hint');
             hBox.style.display = 'block';
-            hBox.innerHTML = `
-                <strong>${i18n[lang].hintRes}</strong><br>
-                ${i18n[lang].thPeriod}: ${resultObj.start} - ${resultObj.end}<br>
-                ${i18n[lang].thTotal}: ${resultObj.total} kWh ${useCons ? `(+${resultObj.range} km)` : ''}<br>
-                ${i18n[lang].thCost}: € ${resultObj.cost} ${useFuel ? `| ${i18n[lang].thSaved}: € ${resultObj.saved}` : ''}
-            `;
+            hBox.innerHTML = `<strong>${i18n[lang].hintRes}</strong><br>${result.start} - ${result.end}<br>${result.total} kWh (+${result.range} km)<br>Cost: € ${result.cost} | Saved: € ${result.saved}`;
 
-            if (shouldSave) saveToHistory(resultObj);
+            if (shouldSave) saveToHistory(result);
         }
 
         function saveToHistory(item) {
             let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            item.id = Date.now() + Math.random();
             history.unshift(item);
-            localStorage.setItem('ev_euro_v1', JSON.stringify(history.slice(0, 100)));
+            localStorage.setItem('ev_euro_v1', JSON.stringify(history.slice(0, 50)));
             renderHistory();
         }
 
@@ -357,24 +332,35 @@
         }
 
         function deleteEntry(id) {
-            if(confirm(lang === 'bg' ? 'Изтриване на записа?' : 'Delete this entry?')) {
-                let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-                localStorage.setItem('ev_euro_v1', JSON.stringify(history.filter(i => i.id !== id)));
-                renderHistory();
-            }
+            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
+            localStorage.setItem('ev_euro_v1', JSON.stringify(history.filter(i => i.id !== id)));
+            renderHistory();
         }
 
         function exportToCSV() {
             let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            let csv = "\uFEFFStart,End,kWh,Range,Cost_EUR,Saved_EUR\n";
+            let csv = "\uFEFFStart,End,kWh,Range,Cost,Saved\n";
             history.forEach(i => csv += `"${i.start}","${i.end}",${i.total},${i.range},${i.cost},${i.saved}\n`);
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `EV_Economy_Report_EUR.csv`;
+            link.download = `EV_Report.csv`;
             link.click();
         }
 
-        loadToggles();
+        // Инициализация при зареждане
+        document.getElementById('d1').valueAsDate = new Date();
+        document.getElementById('d2').valueAsDate = new Date();
+        
+        // Зареждане на настройки
+        const fuelSaved = localStorage.getItem('ev_opt_fuel');
+        const consSaved = localStorage.getItem('ev_opt_cons');
+        const lastPrice = localStorage.getItem('ev_last_fuel_price');
+        
+        if (fuelSaved !== null) document.getElementById('useFuel').checked = (fuelSaved === 'true');
+        if (consSaved !== null) document.getElementById('useCons').checked = (consSaved === 'true');
+        if (lastPrice !== null) document.getElementById('fuelPrice').value = lastPrice;
+
+        updateToggles();
         updateUI();
     </script>
 </body>
