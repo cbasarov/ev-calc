@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EV Calc Pro + eWeLink</title>
+    <title>EV Calc Pro - Euro Edition</title>
     
     <meta name="theme-color" content="#2c3e50">
-    <link rel="manifest" id="manifest-placeholder">
-
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #2c3e50, #4ca1af); min-height: 100vh; padding: 10px; }
-        .container { max-width: 850px; margin: 0 auto; background: rgba(255, 255, 255, 0.98); border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
+        .container { max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.98); border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
+        
+        .lang-switch { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .lang-btn { background: #eee; border: 1px solid #ccc; padding: 5px 10px; cursor: pointer; border-radius: 5px; font-size: 12px; margin-left: 5px; }
+        .lang-btn.active { background: #34495e; color: white; }
+
         h1 { text-align: center; font-size: 22px; margin-bottom: 15px; color: #2c3e50; }
         .tariff-info { text-align: center; font-size: 11px; color: #666; margin-bottom: 15px; background: #f0f2f5; padding: 8px; border-radius: 8px; }
-        .input-section { max-width: 500px; margin: 0 auto; }
+        .input-section { max-width: 600px; margin: 0 auto; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .input-group { margin-bottom: 12px; }
         label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
-        .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; }
-        .toggle-btn { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; background: #f8f9fa; }
+        .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
+        .toggle-btn { flex: 1; min-width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; background: #f8f9fa; }
         .toggle-btn.active { background: #3498db; color: white; border-color: #2980b9; }
         .btn-calc { width: 100%; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .actions { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
@@ -30,19 +34,26 @@
         #fileInput { display: none; }
         .history-section { margin-top: 30px; }
         .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 500px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 600px; }
         th { background: #f4f4f4; padding: 10px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
         .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 8px; border-radius: 4px; }
+        .calc-result-hint { background: #e8f4fd; border-left: 4px solid #3498db; padding: 10px; margin-top: 10px; font-size: 13px; display: none; border-radius: 4px; }
+        .badge-save { background: #2ecc71; color: white; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="container">
+        <div class="lang-switch">
+            <button class="lang-btn" id="btn-bg" onclick="setLanguage('bg')">BG</button>
+            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+        </div>
+
         <div class="input-section">
-            <h1>⚡ EV Calc Pro</h1>
-            <div class="tariff-info">
-                Дневна: 0.293 лв. | Нощна: 0.173 лв. | 1€ = 1.95583 лв.
+            <h1 id="txt-title">⚡ EV Calc Pro (€)</h1>
+            <div class="tariff-info" id="txt-tariff">
+                Day: 0.150 € | Night: 0.088 € | Fuel: 1.33 €/L
             </div>
 
             <div class="toggle-container">
@@ -52,49 +63,58 @@
 
             <div class="toggle-container">
                 <button id="m_start" class="toggle-btn active" onclick="setMode('start')">Нач. час</button>
+                <button id="m_target" class="toggle-btn" onclick="setMode('target')">Готова в</button>
                 <button id="m_range" class="toggle-btn" onclick="setMode('range')">Интервал</button>
                 <button id="m_kwh" class="toggle-btn" onclick="setMode('kwh')">kWh</button>
             </div>
 
             <div id="batteryFields">
                 <div class="grid">
-                    <div class="input-group"><label>Текущ %</label><input type="number" id="curPct" value="20"></div>
-                    <div class="input-group"><label>Желан %</label><input type="number" id="tarPct" value="80"></div>
+                    <div class="input-group"><label id="txt-curPct">Текущ %</label><input type="number" id="curPct" value="20"></div>
+                    <div class="input-group"><label id="txt-tarPct">Желан %</label><input type="number" id="tarPct" value="80"></div>
+                </div>
+                <div class="grid-3">
+                    <div class="input-group"><label id="txt-cap">Батерия (kWh)</label><input type="number" id="cap" value="84"></div>
+                    <div class="input-group"><label id="txt-pwr">Мощност (kW)</label><input type="number" id="pwr" value="2.3"></div>
+                    <div class="input-group"><label id="txt-cons">Разход (kWh/100)</label><input type="number" id="cons" value="18"></div>
                 </div>
                 <div class="grid">
-                    <div class="input-group"><label>Батерия (kWh)</label><input type="number" id="cap" value="84"></div>
-                    <div class="input-group"><label>Мощност (kW)</label><input type="number" id="pwr" value="2.3"></div>
+                   <div class="input-group"><label id="txt-fuel-cons">Разход Гориво (L/100km)</label><input type="number" id="fuelCons" value="7"></div>
+                   <div class="input-group"><label id="txt-fuel-price">Цена Гориво (€/L)</label><input type="number" id="fuelPrice" value="1.33"></div>
                 </div>
             </div>
 
             <div id="kwhField" style="display: none;" class="input-group">
-                <label>Общо kWh:</label><input type="number" id="manualKwh" placeholder="45.5">
+                <label id="txt-manualKwh">Общо kWh:</label><input type="number" id="manualKwh" placeholder="45.5">
             </div>
 
             <div class="grid">
-                <div class="input-group"><label>Начало</label><input type="date" id="d1"><input type="time" id="t1" value="22:00"></div>
-                <div id="endGroup" class="input-group" style="display:none;"><label>Край</label><input type="date" id="d2"><input type="time" id="t2" value="08:00"></div>
+                <div class="input-group"><label id="txt-date1">Начало</label><input type="date" id="d1"><input type="time" id="t1" value="22:00"></div>
+                <div id="endGroup" class="input-group" style="display:none;"><label id="txt-date2">Край</label><input type="date" id="d2"><input type="time" id="t2" value="08:00"></div>
             </div>
 
-            <button class="btn-calc" onclick="calculate()">ИЗЧИСЛИ И ЗАПИШИ</button>
+            <div id="calc-hint" class="calc-result-hint"></div>
+
+            <button class="btn-calc" id="txt-calcBtn" onclick="calculate()">ИЗЧИСЛИ И ЗАПИШИ</button>
 
             <div class="actions">
-                <button class="btn-action btn-ewelink" onclick="document.getElementById('fileInput').click()">📥 Импорт eWeLink</button>
-                <button class="btn-action btn-export" onclick="exportToCSV()">⬇ Експорт Excel</button>
+                <button class="btn-action btn-ewelink" id="txt-import" onclick="document.getElementById('fileInput').click()">📥 eWeLink</button>
+                <button class="btn-action btn-export" id="txt-export" onclick="exportToCSV()">⬇ Excel</button>
                 <input type="file" id="fileInput" accept=".csv" onchange="importEwelink(this)">
             </div>
         </div>
 
         <div class="history-section">
-            <h3>📋 Дневник</h3>
+            <h3 id="txt-history-title">📋 Дневник</h3>
             <div class="table-wrapper">
                 <table id="historyTable">
                     <thead>
                         <tr>
-                            <th>Период</th>
-                            <th>Общо kWh</th>
-                            <th>Дн / Нощ kWh</th>
-                            <th>Сума (лв / €)</th>
+                            <th id="th-period">Период</th>
+                            <th id="th-total">kWh</th>
+                            <th id="th-added">Пробег</th>
+                            <th id="th-cost">Цена (€)</th>
+                            <th id="th-saved">Спестено (€)</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -105,160 +125,186 @@
     </div>
 
     <script>
-        const EUR_RATE = 1.95583;
         let season = 'summer';
         let mode = 'start';
+        let lang = localStorage.getItem('ev_lang') || 'bg';
+
+        const i18n = {
+            bg: {
+                title: "⚡ EV Calc Pro (€)",
+                tariff: "Дневна: 0.150 € | Нощна: 0.088 € | Гориво: 1.33 €/л",
+                summer: "Лято (23-07)", winter: "Зима (22-06)", mStart: "Нач. час", mTarget: "Готова в", mRange: "Интервал",
+                curPct: "Текущ %", tarPct: "Желан %", cap: "Батерия (kWh)", pwr: "Мощност (kW)", cons: "Разход (kWh/100)",
+                fuelCons: "Разход Гориво (л/100)", fuelPrice: "Цена Гориво (€/л)", manKwh: "Общо kWh:", dateStart: "Начало", dateEnd: "Край / Готова в",
+                calc: "ИЗЧИСЛИ И ЗАПИШИ", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 Дневник",
+                thPeriod: "Период", thTotal: "kWh", thAdded: "Пробег", thCost: "Цена (€)", thSaved: "Спестено (€)",
+                auto: "Авто", hintStart: "Започнете в: "
+            },
+            en: {
+                title: "⚡ EV Calc Pro (€)",
+                tariff: "Day: 0.150 € | Night: 0.088 € | Fuel: 1.33 €/L",
+                summer: "Summer (23-07)", winter: "Winter (22-06)", mStart: "Start At", mTarget: "Ready At", mRange: "Range",
+                curPct: "Current %", tarPct: "Target %", cap: "Battery (kWh)", pwr: "Power (kW)", cons: "Cons. (kWh/100)",
+                fuelCons: "Fuel Cons. (l/100)", fuelPrice: "Fuel Price (€/L)", manKwh: "Total kWh:", dateStart: "Start", dateEnd: "End / Ready At",
+                calc: "CALCULATE & SAVE", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 History",
+                thPeriod: "Period", thTotal: "kWh", thAdded: "Range", thCost: "Cost (€)", thSaved: "Saved (€)",
+                auto: "Auto", hintStart: "Start at: "
+            }
+        };
+
+        function setLanguage(l) { lang = l; localStorage.setItem('ev_lang', l); updateUI(); }
+
+        function updateUI() {
+            const t = i18n[lang];
+            document.getElementById('txt-title').innerText = t.title;
+            document.getElementById('txt-tariff').innerText = t.tariff;
+            document.getElementById('s_summer').innerText = t.summer;
+            document.getElementById('s_winter').innerText = t.winter;
+            document.getElementById('m_start').innerText = t.mStart;
+            document.getElementById('m_target').innerText = t.mTarget;
+            document.getElementById('m_range').innerText = t.mRange;
+            document.getElementById('txt-curPct').innerText = t.curPct;
+            document.getElementById('txt-tarPct').innerText = t.tarPct;
+            document.getElementById('txt-cap').innerText = t.cap;
+            document.getElementById('txt-pwr').innerText = t.pwr;
+            document.getElementById('txt-cons').innerText = t.cons;
+            document.getElementById('txt-fuel-cons').innerText = t.fuelCons;
+            document.getElementById('txt-fuel-price').innerText = t.fuelPrice;
+            document.getElementById('txt-manualKwh').innerText = t.manKwh;
+            document.getElementById('txt-date1').innerText = (mode === 'target') ? t.dateEnd : t.dateStart;
+            document.getElementById('txt-date2').innerText = t.dateEnd;
+            document.getElementById('txt-calcBtn').innerText = t.calc;
+            document.getElementById('txt-import').innerText = t.import;
+            document.getElementById('txt-export').innerText = t.export;
+            document.getElementById('txt-history-title').innerText = t.history;
+            document.getElementById('th-period').innerText = t.thPeriod;
+            document.getElementById('th-total').innerText = t.thTotal;
+            document.getElementById('th-added').innerText = t.thAdded;
+            document.getElementById('th-cost').innerText = t.thCost;
+            document.getElementById('th-saved').innerText = t.thSaved;
+            renderHistory();
+        }
 
         document.getElementById('d1').valueAsDate = new Date();
         document.getElementById('d2').valueAsDate = new Date();
 
         function setSeason(s) {
             season = s;
-            document.getElementById('s_summer').className = s === 'summer' ? 'toggle-btn active' : 'toggle-btn';
-            document.getElementById('s_winter').className = s === 'winter' ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('s_summer').classList.toggle('active', s === 'summer');
+            document.getElementById('s_winter').classList.toggle('active', s === 'winter');
         }
 
         function setMode(m) {
             mode = m;
-            document.getElementById('m_start').className = m === 'start' ? 'toggle-btn active' : 'toggle-btn';
-            document.getElementById('m_range').className = m === 'range' ? 'toggle-btn active' : 'toggle-btn';
-            document.getElementById('m_kwh').className = m === 'kwh' ? 'toggle-btn active' : 'toggle-btn';
+            document.getElementById('m_start').classList.toggle('active', m === 'start');
+            document.getElementById('m_target').classList.toggle('active', m === 'target');
+            document.getElementById('m_range').classList.toggle('active', m === 'range');
+            document.getElementById('m_kwh').classList.toggle('active', m === 'kwh');
             document.getElementById('batteryFields').style.display = m === 'kwh' ? 'none' : 'block';
             document.getElementById('kwhField').style.display = m === 'kwh' ? 'block' : 'none';
-            document.getElementById('endGroup').style.display = m === 'start' ? 'none' : 'block';
+            document.getElementById('endGroup').style.display = (m === 'range' || m === 'kwh') ? 'block' : 'none';
+            updateUI();
         }
 
         function calculate() {
-            const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
-            const start = new Date(document.getElementById('d1').value + ' ' + document.getElementById('t1').value);
-            let end, totalKwh;
+            const startOrTarget = new Date(document.getElementById('d1').value + ' ' + document.getElementById('t1').value);
+            let start, end, totalKwh;
+            const c = parseFloat(document.getElementById('cap').value);
+            const p = parseFloat(document.getElementById('pwr').value);
 
             if (mode === 'start') {
-                const c = parseFloat(document.getElementById('cap').value);
-                const p = parseFloat(document.getElementById('pwr').value);
                 totalKwh = ((document.getElementById('tarPct').value - document.getElementById('curPct').value) / 100) * c;
+                start = startOrTarget;
                 end = new Date(start.getTime() + (totalKwh / p) * 3600000);
+            } else if (mode === 'target') {
+                totalKwh = ((document.getElementById('tarPct').value - document.getElementById('curPct').value) / 100) * c;
+                end = startOrTarget;
+                start = new Date(end.getTime() - (totalKwh / p) * 3600000);
+                const hBox = document.getElementById('calc-hint');
+                hBox.style.display = 'block';
+                hBox.innerText = i18n[lang].hintStart + start.toLocaleString(undefined, {hour:'2-digit', minute:'2-digit', hour12:false});
             } else {
+                start = startOrTarget;
                 end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
-                totalKwh = (mode === 'kwh') ? parseFloat(document.getElementById('manualKwh').value) : ((end - start) / 3600000) * parseFloat(document.getElementById('pwr').value);
+                totalKwh = (mode === 'kwh') ? parseFloat(document.getElementById('manualKwh').value) : ((end - start) / 3600000) * p;
             }
-
             processAndSave(start, end, totalKwh);
         }
 
         function processAndSave(start, end, totalKwh) {
             const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
             let nightKwh = 0, dayKwh = 0;
-            const minutes = (end - start) / 60000;
+            const minutes = Math.max(1, Math.abs(end - start) / 60000);
             const kwhPerMin = totalKwh / minutes;
-            
-            let curr = new Date(start);
-            while (curr < end) {
+            let curr = new Date(Math.min(start, end));
+            const finish = new Date(Math.max(start, end));
+
+            while (curr < finish) {
                 let h = curr.getHours();
                 let isNight = (nightLimit.s > nightLimit.e) ? (h >= nightLimit.s || h < nightLimit.e) : (h >= nightLimit.s && h < nightLimit.e);
+                // Нови цени в Евро: Дневна 0.15, Нощна 0.088
                 if (isNight) nightKwh += kwhPerMin; else dayKwh += kwhPerMin;
                 curr.setMinutes(curr.getMinutes() + 1);
             }
 
-            const pBGN = (nightKwh * 0.173) + (dayKwh * 0.293);
+            const costEV = (nightKwh * 0.088) + (dayKwh * 0.150);
+            const evCons = parseFloat(document.getElementById('cons').value);
+            const addedRange = (totalKwh / evCons) * 100;
+            
+            const fCons = parseFloat(document.getElementById('fuelCons').value);
+            const fPrice = parseFloat(document.getElementById('fuelPrice').value);
+            const costFuel = (addedRange / 100) * fCons * fPrice;
+            const saved = costFuel - costEV;
+
             saveToHistory({
-                start: start.toLocaleString('bg-BG', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
-                end: end.toLocaleString('bg-BG', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
+                start: start.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}),
+                end: end.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}),
                 total: totalKwh.toFixed(1),
-                dayKwh: dayKwh.toFixed(2),
-                nightKwh: nightKwh.toFixed(2),
-                bgn: pBGN.toFixed(2),
-                eur: (pBGN / EUR_RATE).toFixed(2)
+                range: addedRange.toFixed(0),
+                cost: costEV.toFixed(2),
+                saved: saved.toFixed(2)
             });
         }
 
-        function importEwelink(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const lines = e.target.result.split('\n');
-                const dailyData = {};
-                const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
-
-                // Започваме от ред 1, защото ред 0 е заглавната част
-                for (let i = 1; i < lines.length; i++) {
-                    const cols = lines[i].split(',');
-                    if (cols.length < 3) continue;
-
-                    const date = cols[0].trim(); // 2026-01-06
-                    const timeRange = cols[1].trim(); // 23:00-24:00
-                    const kwh = parseFloat(cols[2]);
-
-                    if (isNaN(kwh) || kwh <= 0) continue;
-
-                    if (!dailyData[date]) dailyData[date] = { dayKwh: 0, nightKwh: 0, total: 0 };
-
-                    const startHour = parseInt(timeRange.split(':')[0]);
-                    let isNight = (nightLimit.s > nightLimit.e) ? (startHour >= nightLimit.s || startHour < nightLimit.e) : (startHour >= nightLimit.s && startHour < nightLimit.e);
-                    
-                    if (isNight) dailyData[date].nightKwh += kwh;
-                    else dailyData[date].dayKwh += kwh;
-                    dailyData[date].total += kwh;
-                }
-
-                for (const date in dailyData) {
-                    const d = dailyData[date];
-                    const pBGN = (d.nightKwh * 0.173) + (d.dayKwh * 0.293);
-                    saveToHistory({
-                        start: date + " (eWeLink)",
-                        end: "Авто отчет",
-                        total: d.total.toFixed(2),
-                        dayKwh: d.dayKwh.toFixed(2),
-                        nightKwh: d.nightKwh.toFixed(2),
-                        bgn: pBGN.toFixed(2),
-                        eur: (pBGN / EUR_RATE).toFixed(2)
-                    }, false);
-                }
-                renderHistory();
-                alert("Данните са импортирани успешно!");
-            };
-            reader.readAsText(file);
-        }
-
         function saveToHistory(item, render = true) {
-            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
+            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
             item.id = Date.now() + Math.random();
             history.unshift(item);
-            localStorage.setItem('ev_final_v3', JSON.stringify(history.slice(0, 100)));
+            localStorage.setItem('ev_euro_v1', JSON.stringify(history.slice(0, 100)));
             if (render) renderHistory();
         }
 
         function renderHistory() {
-            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
+            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
             document.getElementById('historyBody').innerHTML = history.map(i => `
                 <tr>
                     <td>${i.start}<br><small>${i.end}</small></td>
-                    <td><b>${i.total}</b> kWh</td>
-                    <td>Д: ${i.dayKwh}<br>Н: ${i.nightKwh}</td>
-                    <td><b>${i.bgn} лв</b><br><small>${i.eur} €</small></td>
+                    <td><b>${i.total}</b></td>
+                    <td>+${i.range} km</td>
+                    <td>€ ${i.cost}</td>
+                    <td><span class="badge-save">€ ${i.saved}</span></td>
                     <td><button class="btn-delete" onclick="deleteEntry(${i.id})">✕</button></td>
                 </tr>
             `).join('');
         }
 
         function deleteEntry(id) {
-            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
-            localStorage.setItem('ev_final_v3', JSON.stringify(history.filter(i => i.id !== id)));
+            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
+            localStorage.setItem('ev_euro_v1', JSON.stringify(history.filter(i => i.id !== id)));
             renderHistory();
         }
 
         function exportToCSV() {
-            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
-            let csv = "\uFEFFНачало,Край,Общо kWh,Дневна kWh,Нощна kWh,Цена лв,Цена EUR\n";
-            history.forEach(i => csv += `${i.start},${i.end},${i.total},${i.dayKwh},${i.nightKwh},${i.bgn},${i.eur}\n`);
+            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
+            let csv = "\uFEFFStart,End,kWh,Range,Cost_EUR,Saved_EUR\n";
+            history.forEach(i => csv += `"${i.start}","${i.end}",${i.total},${i.range},${i.cost},${i.saved}\n`);
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `EV_Report.csv`;
+            link.download = `EV_Economy_Report_EUR.csv`;
             link.click();
         }
 
-        renderHistory();
+        updateUI();
     </script>
 </body>
 </html>
