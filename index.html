@@ -3,62 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EV Calc Pro + Export</title>
+    <title>EV Calc Pro + eWeLink</title>
     
     <meta name="theme-color" content="#2c3e50">
     <link rel="manifest" id="manifest-placeholder">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2c3e50, #4ca1af);
-            min-height: 100vh;
-            padding: 10px;
-        }
-        .container {
-            max-width: 850px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #2c3e50, #4ca1af); min-height: 100vh; padding: 10px; }
+        .container { max-width: 850px; margin: 0 auto; background: rgba(255, 255, 255, 0.98); border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
+        h1 { text-align: center; font-size: 22px; margin-bottom: 15px; color: #2c3e50; }
+        .tariff-info { text-align: center; font-size: 11px; color: #666; margin-bottom: 15px; background: #f0f2f5; padding: 8px; border-radius: 8px; }
         .input-section { max-width: 500px; margin: 0 auto; }
-        h1 { text-align: center; font-size: 22px; margin-bottom: 5px; color: #2c3e50; }
-        
-        .tariff-info {
-            text-align: center; font-size: 11px; color: #666;
-            margin-bottom: 15px; background: #f0f2f5; padding: 5px; border-radius: 5px;
-        }
-
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .input-group { margin-bottom: 12px; }
-        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #444; }
+        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
-        
         .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; }
         .toggle-btn { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; background: #f8f9fa; }
         .toggle-btn.active { background: #3498db; color: white; border-color: #2980b9; }
-
         .btn-calc { width: 100%; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
-        .result { margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 10px; text-align: center; display: none; }
-        .price-bgn { color: #2e7d32; font-size: 1.5em; font-weight: bold; display: block; }
-        
+        .actions { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .btn-action { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-ewelink { background: #00a8ff; }
+        .btn-export { background: #34495e; }
+        #fileInput { display: none; }
         .history-section { margin-top: 30px; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        h3 { font-size: 16px; color: #2c3e50; }
-        
-        .btn-export { background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        
         .table-wrapper { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 500px; }
-        th { background: #f4f4f4; padding: 10px; text-align: left; color: #555; }
+        th { background: #f4f4f4; padding: 10px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid #eee; }
-        .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
-        
-        .badge { background: #eee; padding: 2px 5px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 2px; }
+        .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -93,8 +68,7 @@
             </div>
 
             <div id="kwhField" style="display: none;" class="input-group">
-                <label>Общо заредени kWh:</label>
-                <input type="number" id="manualKwh" placeholder="45.5">
+                <label>Общо kWh:</label><input type="number" id="manualKwh" placeholder="45.5">
             </div>
 
             <div class="grid">
@@ -104,24 +78,22 @@
 
             <button class="btn-calc" onclick="calculate()">ИЗЧИСЛИ И ЗАПИШИ</button>
 
-            <div id="resultArea" class="result">
-                <span class="price-bgn" id="outPriceBGN"></span>
-                <span style="color:#666; font-size: 0.9em;" id="outPriceEUR"></span>
+            <div class="actions">
+                <button class="btn-action btn-ewelink" onclick="document.getElementById('fileInput').click()">📥 Импорт eWeLink</button>
+                <button class="btn-action btn-export" onclick="exportToCSV()">⬇ Експорт Excel</button>
+                <input type="file" id="fileInput" accept=".csv" onchange="importEwelink(this)">
             </div>
         </div>
 
         <div class="history-section">
-            <div class="history-header">
-                <h3>📋 Дневник</h3>
-                <button class="btn-export" onclick="exportToCSV()">⬇ Експорт Excel (CSV)</button>
-            </div>
+            <h3>📋 Дневник</h3>
             <div class="table-wrapper">
                 <table id="historyTable">
                     <thead>
                         <tr>
-                            <th>Период (Начало - Край)</th>
+                            <th>Период</th>
                             <th>Общо kWh</th>
-                            <th>Дневна / Нощна</th>
+                            <th>Дн / Нощ kWh</th>
                             <th>Сума (лв / €)</th>
                             <th></th>
                         </tr>
@@ -133,12 +105,6 @@
     </div>
 
     <script>
-        /* PWA Manifest */
-        const manifest = { "name": "EV Calc Pro", "short_name": "EV Calc", "start_url": ".", "display": "standalone", "background_color": "#2c3e50", "theme_color": "#2c3e50", "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/3104/3104859.png", "sizes": "512x512", "type": "image/png"}] };
-        document.querySelector('#manifest-placeholder').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`self.addEventListener('fetch', function(event) {});`)); }
-
-        /* LOGIC */
         const EUR_RATE = 1.95583;
         let season = 'summer';
         let mode = 'start';
@@ -177,51 +143,99 @@
                 totalKwh = (mode === 'kwh') ? parseFloat(document.getElementById('manualKwh').value) : ((end - start) / 3600000) * parseFloat(document.getElementById('pwr').value);
             }
 
-            if (end <= start || isNaN(totalKwh)) { alert("Грешка в данните!"); return; }
+            processAndSave(start, end, totalKwh);
+        }
 
+        function processAndSave(start, end, totalKwh) {
+            const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
             let nightKwh = 0, dayKwh = 0;
-            const kwhPerMin = totalKwh / ((end - start) / 60000);
-            let current = new Date(start);
-            while (current < end) {
-                let h = current.getHours();
+            const minutes = (end - start) / 60000;
+            const kwhPerMin = totalKwh / minutes;
+            
+            let curr = new Date(start);
+            while (curr < end) {
+                let h = curr.getHours();
                 let isNight = (nightLimit.s > nightLimit.e) ? (h >= nightLimit.s || h < nightLimit.e) : (h >= nightLimit.s && h < nightLimit.e);
                 if (isNight) nightKwh += kwhPerMin; else dayKwh += kwhPerMin;
-                current.setMinutes(current.getMinutes() + 1);
+                curr.setMinutes(curr.getMinutes() + 1);
             }
 
             const pBGN = (nightKwh * 0.173) + (dayKwh * 0.293);
-            const pEUR = pBGN / EUR_RATE;
-
-            document.getElementById('outPriceBGN').textContent = pBGN.toFixed(2) + " лв.";
-            document.getElementById('outPriceEUR').textContent = "≈ " + pEUR.toFixed(2) + " €";
-            document.getElementById('resultArea').style.display = 'block';
-
-            saveToHistory({ 
+            saveToHistory({
                 start: start.toLocaleString('bg-BG', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
                 end: end.toLocaleString('bg-BG', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
                 total: totalKwh.toFixed(1),
                 dayKwh: dayKwh.toFixed(2),
                 nightKwh: nightKwh.toFixed(2),
                 bgn: pBGN.toFixed(2),
-                eur: pEUR.toFixed(2)
+                eur: (pBGN / EUR_RATE).toFixed(2)
             });
         }
 
-        function saveToHistory(item) {
-            let history = JSON.parse(localStorage.getItem('ev_final_v2') || '[]');
-            item.id = Date.now();
+        function importEwelink(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const lines = e.target.result.split('\n');
+                const dailyData = {};
+                const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
+
+                // Започваме от ред 1, защото ред 0 е заглавната част
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',');
+                    if (cols.length < 3) continue;
+
+                    const date = cols[0].trim(); // 2026-01-06
+                    const timeRange = cols[1].trim(); // 23:00-24:00
+                    const kwh = parseFloat(cols[2]);
+
+                    if (isNaN(kwh) || kwh <= 0) continue;
+
+                    if (!dailyData[date]) dailyData[date] = { dayKwh: 0, nightKwh: 0, total: 0 };
+
+                    const startHour = parseInt(timeRange.split(':')[0]);
+                    let isNight = (nightLimit.s > nightLimit.e) ? (startHour >= nightLimit.s || startHour < nightLimit.e) : (startHour >= nightLimit.s && startHour < nightLimit.e);
+                    
+                    if (isNight) dailyData[date].nightKwh += kwh;
+                    else dailyData[date].dayKwh += kwh;
+                    dailyData[date].total += kwh;
+                }
+
+                for (const date in dailyData) {
+                    const d = dailyData[date];
+                    const pBGN = (d.nightKwh * 0.173) + (d.dayKwh * 0.293);
+                    saveToHistory({
+                        start: date + " (eWeLink)",
+                        end: "Авто отчет",
+                        total: d.total.toFixed(2),
+                        dayKwh: d.dayKwh.toFixed(2),
+                        nightKwh: d.nightKwh.toFixed(2),
+                        bgn: pBGN.toFixed(2),
+                        eur: (pBGN / EUR_RATE).toFixed(2)
+                    }, false);
+                }
+                renderHistory();
+                alert("Данните са импортирани успешно!");
+            };
+            reader.readAsText(file);
+        }
+
+        function saveToHistory(item, render = true) {
+            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
+            item.id = Date.now() + Math.random();
             history.unshift(item);
-            localStorage.setItem('ev_final_v2', JSON.stringify(history.slice(0, 50)));
-            renderHistory();
+            localStorage.setItem('ev_final_v3', JSON.stringify(history.slice(0, 100)));
+            if (render) renderHistory();
         }
 
         function renderHistory() {
-            let history = JSON.parse(localStorage.getItem('ev_final_v2') || '[]');
+            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
             document.getElementById('historyBody').innerHTML = history.map(i => `
                 <tr>
-                    <td>От: ${i.start}<br>До: ${i.end}</td>
+                    <td>${i.start}<br><small>${i.end}</small></td>
                     <td><b>${i.total}</b> kWh</td>
-                    <td>Дн: ${i.dayKwh}<br>Нощ: ${i.nightKwh}</td>
+                    <td>Д: ${i.dayKwh}<br>Н: ${i.nightKwh}</td>
                     <td><b>${i.bgn} лв</b><br><small>${i.eur} €</small></td>
                     <td><button class="btn-delete" onclick="deleteEntry(${i.id})">✕</button></td>
                 </tr>
@@ -229,29 +243,19 @@
         }
 
         function deleteEntry(id) {
-            let history = JSON.parse(localStorage.getItem('ev_final_v2') || '[]');
-            localStorage.setItem('ev_final_v2', JSON.stringify(history.filter(i => i.id !== id)));
+            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
+            localStorage.setItem('ev_final_v3', JSON.stringify(history.filter(i => i.id !== id)));
             renderHistory();
         }
 
         function exportToCSV() {
-            let history = JSON.parse(localStorage.getItem('ev_final_v2') || '[]');
-            if (history.length === 0) { alert("Няма данни за експорт!"); return; }
-            
-            let csvContent = "\uFEFF"; // BOM за правилна кирилица в Excel
-            csvContent += "Начало,Край,Общо kWh,Дневна kWh,Нощна kWh,Цена лв,Цена EUR\n";
-            
-            history.forEach(i => {
-                csvContent += `${i.start},${i.end},${i.total},${i.dayKwh},${i.nightKwh},${i.bgn},${i.eur}\n`;
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let history = JSON.parse(localStorage.getItem('ev_final_v3') || '[]');
+            let csv = "\uFEFFНачало,Край,Общо kWh,Дневна kWh,Нощна kWh,Цена лв,Цена EUR\n";
+            history.forEach(i => csv += `${i.start},${i.end},${i.total},${i.dayKwh},${i.nightKwh},${i.bgn},${i.eur}\n`);
             const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `EV_Charging_Report_${new Date().toLocaleDateString()}.csv`);
-            document.body.appendChild(link);
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `EV_Report.csv`;
             link.click();
-            document.body.removeChild(link);
         }
 
         renderHistory();
