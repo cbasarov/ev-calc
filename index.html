@@ -51,6 +51,7 @@
         .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
         .calc-result-hint { background: #e8f4fd; border-left: 4px solid #3498db; padding: 15px; margin-top: 15px; font-size: 13px; display: none; border-radius: 4px; line-height: 1.5; }
         .badge-save { background: #2ecc71; color: white; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
+        .final-pct-badge { background: #34495e; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -80,7 +81,7 @@
             <div id="batteryFields">
                 <div class="grid">
                     <div class="input-group"><label id="txt-curPct">Текущ %</label><input type="number" id="curPct" value="20"></div>
-                    <div class="input-group"><label id="txt-tarPct">Желан %</label><input type="number" id="tarPct" value="80"></div>
+                    <div class="input-group" id="tarPctGroup"><label id="txt-tarPct">Желан %</label><input type="number" id="tarPct" value="80"></div>
                 </div>
                 
                 <div class="grid-3">
@@ -163,7 +164,7 @@
                 fuelCons: "Разход Гориво (л/100)", fuelPrice: "Цена Гориво (€/л)", manKwh: "Общо kWh:", dateStart: "Начало", dateEnd: "Край / Готова в",
                 calc: "ИЗЧИСЛИ И ЗАПИШИ", calcOnly: "САМО ИЗЧИСЛИ", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 Дневник",
                 thPeriod: "Период", thTotal: "kWh", thAdded: "Пробег", thCost: "Цена (€)", thSaved: "Спестено (€)",
-                useFuel: "Изчисли сравнение с гориво", hintRes: "Резултат: "
+                useFuel: "Изчисли сравнение с гориво", hintRes: "Резултат: ", finalPct: "Краен %: "
             },
             en: {
                 title: "⚡ EV Calc Pro (€)",
@@ -173,7 +174,7 @@
                 fuelCons: "Fuel Cons. (l/100)", fuelPrice: "Fuel Price (€/L)", manKwh: "Total kWh:", dateStart: "Start", dateEnd: "End / Ready At",
                 calc: "CALCULATE & SAVE", calcOnly: "CALC ONLY", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 History",
                 thPeriod: "Period", thTotal: "kWh", thAdded: "Range", thCost: "Cost (€)", thSaved: "Saved (€)",
-                useFuel: "Calculate fuel comparison", hintRes: "Result: "
+                useFuel: "Calculate fuel comparison", hintRes: "Result: ", finalPct: "Final %: "
             }
         };
 
@@ -237,7 +238,9 @@
             document.getElementById('m_target').classList.toggle('active', m === 'target');
             document.getElementById('m_range').classList.toggle('active', m === 'range');
             document.getElementById('m_kwh').classList.toggle('active', m === 'kwh');
+            
             document.getElementById('batteryFields').style.display = m === 'kwh' ? 'none' : 'block';
+            document.getElementById('tarPctGroup').style.display = (m === 'start' || m === 'target') ? 'block' : 'none';
             document.getElementById('kwhField').style.display = m === 'kwh' ? 'block' : 'none';
             document.getElementById('endGroup').style.display = (m === 'range' || m === 'kwh') ? 'block' : 'none';
             updateUI();
@@ -245,27 +248,38 @@
 
         function calculate(shouldSave = true) {
             const startOrTarget = new Date(document.getElementById('d1').value + ' ' + document.getElementById('t1').value);
-            let start, end, totalKwh;
-            const c = parseFloat(document.getElementById('cap').value);
-            const p = parseFloat(document.getElementById('pwr').value);
+            let start, end, totalKwh, targetPct;
+            const cap = parseFloat(document.getElementById('cap').value);
+            const pwr = parseFloat(document.getElementById('pwr').value);
+            const curPct = parseFloat(document.getElementById('curPct').value);
 
             if (mode === 'start') {
-                totalKwh = ((document.getElementById('tarPct').value - document.getElementById('curPct').value) / 100) * c;
+                targetPct = parseFloat(document.getElementById('tarPct').value);
+                totalKwh = ((targetPct - curPct) / 100) * cap;
                 start = startOrTarget;
-                end = new Date(start.getTime() + (totalKwh / p) * 3600000);
+                end = new Date(start.getTime() + (totalKwh / pwr) * 3600000);
             } else if (mode === 'target') {
-                totalKwh = ((document.getElementById('tarPct').value - document.getElementById('curPct').value) / 100) * c;
+                targetPct = parseFloat(document.getElementById('tarPct').value);
+                totalKwh = ((targetPct - curPct) / 100) * cap;
                 end = startOrTarget;
-                start = new Date(end.getTime() - (totalKwh / p) * 3600000);
-            } else {
+                start = new Date(end.getTime() - (totalKwh / pwr) * 3600000);
+            } else if (mode === 'range') {
                 start = startOrTarget;
                 end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
-                totalKwh = (mode === 'kwh') ? parseFloat(document.getElementById('manualKwh').value) : ((end - start) / 3600000) * p;
+                totalKwh = ((end - start) / 3600000) * pwr;
+                targetPct = curPct + (totalKwh / cap * 100);
+            } else { // kWh mode
+                totalKwh = parseFloat(document.getElementById('manualKwh').value) || 0;
+                start = startOrTarget;
+                end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
+                // В kWh режим батерията не е задължителна в UI, но я ползваме за процента ако я има
+                targetPct = curPct + (totalKwh / cap * 100);
             }
-            processCalculation(start, end, totalKwh, shouldSave);
+            
+            processCalculation(start, end, totalKwh, targetPct, shouldSave);
         }
 
-        function processCalculation(start, end, totalKwh, shouldSave) {
+        function processCalculation(start, end, totalKwh, finalPct, shouldSave) {
             const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
             let nightKwh = 0, dayKwh = 0;
             const minutes = Math.max(1, Math.abs(end - start) / 60000);
@@ -300,12 +314,21 @@
                 total: totalKwh.toFixed(1),
                 range: addedRange.toFixed(0),
                 cost: costEV.toFixed(2),
-                saved: saved.toFixed(2)
+                saved: saved.toFixed(2),
+                finalPct: finalPct.toFixed(1)
             };
 
             const hBox = document.getElementById('calc-hint');
             hBox.style.display = 'block';
-            hBox.innerHTML = `<strong>${i18n[lang].hintRes}</strong><br>${result.start} - ${result.end}<br>${result.total} kWh (+${result.range} km)<br>Cost: € ${result.cost} | Saved: € ${result.saved}`;
+            const pctText = result.finalPct > 100 ? "100% (Full)" : result.finalPct + "%";
+            
+            hBox.innerHTML = `
+                <strong>${i18n[lang].hintRes}</strong><br>
+                ${result.start} - ${result.end}<br>
+                ${result.total} kWh (+${result.range} km) | 
+                <span class="final-pct-badge">${i18n[lang].finalPct} ${pctText}</span><br>
+                Cost: € ${result.cost} | Saved: € ${result.saved}
+            `;
 
             if (shouldSave) saveToHistory(result);
         }
@@ -322,7 +345,7 @@
             document.getElementById('historyBody').innerHTML = history.map(i => `
                 <tr>
                     <td>${i.start}<br><small>${i.end}</small></td>
-                    <td><b>${i.total}</b></td>
+                    <td><b>${i.total}</b><br><small>${i.finalPct}%</small></td>
                     <td>+${i.range} km</td>
                     <td>€ ${i.cost}</td>
                     <td><span class="badge-save">€ ${i.saved}</span></td>
@@ -339,19 +362,18 @@
 
         function exportToCSV() {
             let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            let csv = "\uFEFFStart,End,kWh,Range,Cost,Saved\n";
-            history.forEach(i => csv += `"${i.start}","${i.end}",${i.total},${i.range},${i.cost},${i.saved}\n`);
+            let csv = "\uFEFFStart,End,kWh,FinalPct,Range,Cost,Saved\n";
+            history.forEach(i => csv += `"${i.start}","${i.end}",${i.total},${i.finalPct},${i.range},${i.cost},${i.saved}\n`);
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
             link.download = `EV_Report.csv`;
             link.click();
         }
 
-        // Инициализация при зареждане
+        // Инициализация
         document.getElementById('d1').valueAsDate = new Date();
         document.getElementById('d2').valueAsDate = new Date();
         
-        // Зареждане на настройки
         const fuelSaved = localStorage.getItem('ev_opt_fuel');
         const consSaved = localStorage.getItem('ev_opt_cons');
         const lastPrice = localStorage.getItem('ev_last_fuel_price');
