@@ -3,387 +3,1654 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EV Calc Pro - Euro Edition</title>
-    
+    <title>EV Calc Pro</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #22263a;
+            --border: #2e3248;
+            --accent: #4ade80;
+            --accent-dim: rgba(74, 222, 128, 0.12);
+            --accent2: #60a5fa;
+            --accent2-dim: rgba(96, 165, 250, 0.12);
+            --danger: #f87171;
+            --danger-dim: rgba(248, 113, 113, 0.12);
+            --warn: #fbbf24;
+            --text: #e8eaf0;
+            --text-muted: #7c82a0;
+            --text-dim: #4a506e;
+            --radius: 10px;
+            --radius-sm: 6px;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #2c3e50, #4ca1af); min-height: 100vh; padding: 10px; }
-        .container { max-width: 900px; margin: 0 auto; background: rgba(255, 255, 255, 0.98); border-radius: 15px; padding: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); }
-        
-        .lang-switch { display: flex; justify-content: flex-end; margin-bottom: 10px; }
-        .lang-btn { background: #eee; border: 1px solid #ccc; padding: 5px 10px; cursor: pointer; border-radius: 5px; font-size: 12px; margin-left: 5px; }
-        .lang-btn.active { background: #34495e; color: white; }
 
-        h1 { text-align: center; font-size: 22px; margin-bottom: 15px; color: #2c3e50; }
-        .tariff-info { text-align: center; font-size: 11px; color: #666; margin-bottom: 15px; background: #f0f2f5; padding: 8px; border-radius: 8px; }
-        
-        .input-section { max-width: 600px; margin: 0 auto; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .app {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 0 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .header-left h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .header-left h1 span { color: var(--accent); }
+        .header-left p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+        .lang-group {
+            display: flex;
+            gap: 4px;
+        }
+        .lang-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
+        }
+        .lang-btn.active {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 12px;
+        }
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 14px;
+        }
+
+        /* ── Toggle pills ── */
+        .pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .pill {
+            flex: 1;
+            min-width: 70px;
+            padding: 9px 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface2);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
+            text-align: center;
+        }
+        .pill.active {
+            background: var(--accent2-dim);
+            border-color: var(--accent2);
+            color: var(--accent2);
+        }
+
+        /* ── Fields ── */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .input-group { margin-bottom: 12px; }
-        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
-        
-        .check-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #2c3e50; }
-        .check-wrap input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
-        .disabled-field { opacity: 0.3; pointer-events: none; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
 
-        .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
-        .toggle-btn { flex: 1; min-width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; background: #f8f9fa; }
-        .toggle-btn.active { background: #3498db; color: white; border-color: #2980b9; }
-        
-        .calc-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; margin-top: 10px; }
-        .btn-calc { padding: 15px; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; }
-        .btn-only-calc { background: #95a5a6; color: white; }
-        .btn-save-calc { background: #27ae60; color: white; }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        .field input, .field select {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 11px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 400;
+            outline: none;
+            transition: border-color 0.15s;
+            width: 100%;
+        }
+        .field input:focus, .field select:focus {
+            border-color: var(--accent2);
+        }
+        .field input.error {
+            border-color: var(--danger);
+        }
+        .field-error {
+            font-size: 10px;
+            color: var(--danger);
+            min-height: 14px;
+        }
 
-        .actions { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        .btn-action { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-ewelink { background: #00a8ff; }
-        .btn-export { background: #34495e; }
-        #fileInput { display: none; }
+        /* ── Tariff section ── */
+        .tariff-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .tariff-block {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+        }
+        .tariff-block-title {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 10px;
+        }
+        .tariff-block.night .tariff-block-title { color: var(--accent2); }
+        .tariff-block.day .tariff-block-title { color: var(--warn); }
+        .tariff-inner { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
-        .history-section { margin-top: 30px; }
-        .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 600px; }
-        th { background: #f4f4f4; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        .btn-delete { background: #ff7675; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
-        .calc-result-hint { background: #e8f4fd; border-left: 4px solid #3498db; padding: 15px; margin-top: 15px; font-size: 13px; display: none; border-radius: 4px; line-height: 1.5; }
-        .badge-save { background: #2ecc71; color: white; padding: 2px 5px; border-radius: 4px; font-weight: bold; }
-        .final-pct-badge { background: #34495e; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        /* ── Check toggle ── */
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .check-row input[type="checkbox"] {
+            width: 15px; height: 15px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+        .check-row span {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            user-select: none;
+        }
+        .check-row.active span { color: var(--text); }
+        .disabled-section { opacity: 0.35; pointer-events: none; }
+
+        /* ── Buttons ── */
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .btn {
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.2px;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary {
+            background: var(--surface2);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #0a1a10;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .btn-sm {
+            flex: 1;
+            padding: 9px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface2);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
+        }
+        .btn-sm:hover { border-color: var(--accent2); color: var(--accent2); }
+
+        /* ── Result box ── */
+        .result-box {
+            display: none;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            margin-top: 12px;
+        }
+        .result-box.show { display: block; }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .result-stat { }
+        .result-stat .val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .result-stat .lbl {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .result-period {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+        .result-period strong { color: var(--text); }
+
+        /* ── Error banner ── */
+        .error-banner {
+            display: none;
+            background: var(--danger-dim);
+            border: 1px solid var(--danger);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--danger);
+            margin-top: 10px;
+        }
+        .error-banner.show { display: block; }
+
+        /* ── History table ── */
+        .history-card { margin-top: 24px; }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .history-title {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .history-summary {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .history-summary span { color: var(--accent); font-weight: 600; }
+
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 540px;
+        }
+        thead th {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+        tbody td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: var(--surface2); }
+        .td-period { font-family: 'Inter', sans-serif; font-size: 11px; }
+        .td-period .sub { color: var(--text-muted); font-size: 10px; }
+        .badge-pct {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        .badge-saved {
+            background: var(--accent-dim);
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            padding: 2px 6px;
+            color: var(--accent);
+        }
+        .badge-saved.negative {
+            background: var(--danger-dim);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .btn-del {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 4px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.15s;
+        }
+        .btn-del:hover { border-color: var(--danger); color: var(--danger); }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        /* ── Totals row ── */
+        .totals-row td {
+            border-top: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--surface2) !important;
+        }
+
+        /* ── eWeLink import modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .modal-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+        .modal-sub code {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent2);
+        }
+        .import-drop {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 14px;
+        }
+        .import-drop:hover, .import-drop.drag-over {
+            border-color: var(--accent2);
+        }
+        .import-drop-icon { font-size: 28px; margin-bottom: 8px; }
+        .import-drop-text { font-size: 13px; color: var(--text-muted); }
+        .import-drop-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+        .import-preview {
+            display: none;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-bottom: 14px;
+            font-size: 12px;
+        }
+        .import-preview.show { display: block; }
+        .preview-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .preview-stat:last-child { border-bottom: none; }
+        .preview-stat .lbl { color: var(--text-muted); }
+        .preview-stat .val { font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+        .import-groups {
+            display: none;
+            margin-bottom: 14px;
+        }
+        .import-groups.show { display: block; }
+        .import-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .import-session-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+        .import-session {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        .import-session:last-child { border-bottom: none; }
+        .import-session input[type="checkbox"] {
+            accent-color: var(--accent);
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+        .import-session-date { color: var(--text-muted); flex: 1; font-family: 'JetBrains Mono', monospace; }
+        .import-session-kwh { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .import-error {
+            background: var(--danger-dim);
+            border: 1px solid var(--danger);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--danger);
+            margin-bottom: 14px;
+            display: none;
+        }
+        .import-error.show { display: block; }
+
+        @media (max-width: 520px) {
+            .grid-3 { grid-template-columns: 1fr 1fr; }
+            .grid-4 { grid-template-columns: 1fr 1fr; }
+            .tariff-inner { grid-template-columns: 1fr 1fr; }
+            .result-grid { grid-template-columns: 1fr 1fr; }
+            .btn-row { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
+<div class="app">
 
-    <div class="container">
-        <div class="lang-switch">
-            <button class="lang-btn" id="btn-bg" onclick="setLanguage('bg')">BG</button>
-            <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>⚡ EV <span>Calc</span> Pro</h1>
+            <p id="txt-subtitle">Калкулатор за домашно зареждане</p>
         </div>
+        <div class="lang-group">
+            <button class="lang-btn active" id="btn-bg" onclick="setLang('bg')">BG</button>
+            <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+        </div>
+    </div>
 
-        <div class="input-section">
-            <h1 id="txt-title">⚡ EV Calc Pro (€)</h1>
-            <div class="tariff-info" id="txt-tariff">Day: 0.150 € | Night: 0.088 €</div>
-
-            <div class="toggle-container">
-                <button id="s_summer" class="toggle-btn active" onclick="setSeason('summer')">Лято (23-07)</button>
-                <button id="s_winter" class="toggle-btn" onclick="setSeason('winter')">Зима (22-06)</button>
-            </div>
-
-            <div class="toggle-container">
-                <button id="m_start" class="toggle-btn active" onclick="setMode('start')">Нач. час</button>
-                <button id="m_target" class="toggle-btn" onclick="setMode('target')">Готова в</button>
-                <button id="m_range" class="toggle-btn" onclick="setMode('range')">Интервал</button>
-                <button id="m_kwh" class="toggle-btn" onclick="setMode('kwh')">kWh</button>
-            </div>
-
-            <div id="batteryFields">
-                <div class="grid">
-                    <div class="input-group"><label id="txt-curPct">Текущ %</label><input type="number" id="curPct" value="20"></div>
-                    <div class="input-group" id="tarPctGroup"><label id="txt-tarPct">Желан %</label><input type="number" id="tarPct" value="80"></div>
-                </div>
-                
-                <div class="grid-3">
-                    <div class="input-group"><label id="txt-cap">Батерия (kWh)</label><input type="number" id="cap" value="84"></div>
-                    <div class="input-group"><label id="txt-pwr">Мощност (kW)</label><input type="number" id="pwr" value="2.3"></div>
-                    <div class="input-group" id="consGroup">
-                        <div class="check-wrap" style="margin-bottom:0">
-                            <input type="checkbox" id="useCons" checked onclick="updateToggles()">
-                            <label id="txt-cons" style="margin:0">Разход (kWh/100)</label>
-                        </div>
-                        <input type="number" id="cons" value="18">
+    <!-- Tariff settings -->
+    <div class="card">
+        <div class="card-title" id="txt-tariff-title">Тарифи и часове</div>
+        <div class="tariff-row">
+            <div class="tariff-block night">
+                <div class="tariff-block-title" id="txt-night-label">🌙 Нощна тарифа</div>
+                <div class="tariff-inner">
+                    <div class="field">
+                        <label id="txt-night-price">Цена (€/kWh)</label>
+                        <input type="number" id="nightPrice" value="0.088" step="0.001" min="0" oninput="saveSettings()">
+                    </div>
+                    <div class="field">
+                        <label id="txt-night-from">От (час)</label>
+                        <input type="number" id="nightFrom" value="23" min="0" max="23" oninput="saveSettings()">
+                    </div>
+                    <div class="field">
+                        <label id="txt-night-to">До (час)</label>
+                        <input type="number" id="nightTo" value="7" min="0" max="23" oninput="saveSettings()">
                     </div>
                 </div>
-                
-                <div class="check-wrap">
-                    <input type="checkbox" id="useFuel" checked onclick="updateToggles()">
-                    <span id="txt-use-fuel">Изчисли сравнение с гориво</span>
+            </div>
+            <div class="tariff-block day">
+                <div class="tariff-block-title" id="txt-day-label">☀️ Дневна тарифа</div>
+                <div class="tariff-inner">
+                    <div class="field">
+                        <label id="txt-day-price">Цена (€/kWh)</label>
+                        <input type="number" id="dayPrice" value="0.150" step="0.001" min="0" oninput="saveSettings()">
+                    </div>
+                    <div class="field">
+                        <label id="txt-day-from">От (час)</label>
+                        <input type="number" id="dayFromDisp" value="7" disabled style="opacity:0.5">
+                    </div>
+                    <div class="field">
+                        <label id="txt-day-to">До (час)</label>
+                        <input type="number" id="dayToDisp" value="23" disabled style="opacity:0.5">
+                    </div>
                 </div>
-
-                <div class="grid" id="fuelInputs">
-                   <div class="input-group"><label id="txt-fuel-cons">Разход Гориво (L/100km)</label><input type="number" id="fuelCons" value="7"></div>
-                   <div class="input-group"><label id="txt-fuel-price">Цена Гориво (€/L)</label><input type="number" id="fuelPrice" value="1.33" oninput="saveFuelPrice()"></div>
-                </div>
-            </div>
-
-            <div id="kwhField" style="display: none;" class="input-group">
-                <label id="txt-manualKwh">Общо kWh:</label><input type="number" id="manualKwh" placeholder="45.5">
-            </div>
-
-            <div class="grid">
-                <div class="input-group"><label id="txt-date1">Начало</label><input type="date" id="d1"><input type="time" id="t1" value="22:00"></div>
-                <div id="endGroup" class="input-group" style="display:none;"><label id="txt-date2">Край</label><input type="date" id="d2"><input type="time" id="t2" value="08:00"></div>
-            </div>
-
-            <div id="calc-hint" class="calc-result-hint"></div>
-
-            <div class="calc-actions">
-                <button class="btn-calc btn-only-calc" id="txt-calcOnly" onclick="calculate(false)">САМО ИЗЧИСЛИ</button>
-                <button class="btn-calc btn-save-calc" id="txt-calcBtn" onclick="calculate(true)">ИЗЧИСЛИ И ЗАПИШИ</button>
-            </div>
-
-            <div class="actions">
-                <button class="btn-action btn-ewelink" id="txt-import" onclick="document.getElementById('fileInput').click()">📥 eWeLink</button>
-                <button class="btn-action btn-export" id="txt-export" onclick="exportToCSV()">⬇ Excel</button>
-                <input type="file" id="fileInput" accept=".csv" onchange="importEwelink(this)">
-            </div>
-        </div>
-
-        <div class="history-section">
-            <h3 id="txt-history-title">📋 Дневник</h3>
-            <div class="table-wrapper">
-                <table id="historyTable">
-                    <thead>
-                        <tr>
-                            <th id="th-period">Период</th>
-                            <th id="th-total">kWh</th>
-                            <th id="th-added">Пробег</th>
-                            <th id="th-cost">Цена (€)</th>
-                            <th id="th-saved">Спестено (€)</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
             </div>
         </div>
     </div>
 
-    <script>
-        let season = 'summer';
-        let mode = 'start';
-        let lang = localStorage.getItem('ev_lang') || 'bg';
+    <!-- Season & Mode -->
+    <div class="card">
+        <div class="card-title" id="txt-season-mode">Сезон и режим</div>
+        <div class="pills" style="margin-bottom:10px">
+            <button class="pill active" id="s_summer" onclick="setSeason('summer')">🌞 Лято (23–07)</button>
+            <button class="pill" id="s_winter" onclick="setSeason('winter')">❄️ Зима (22–06)</button>
+        </div>
+        <div class="pills">
+            <button class="pill active" id="m_start" onclick="setMode('start')">Начален час</button>
+            <button class="pill" id="m_target" onclick="setMode('target')">Готова в</button>
+            <button class="pill" id="m_range" onclick="setMode('range')">Интервал</button>
+            <button class="pill" id="m_kwh" onclick="setMode('kwh')">kWh</button>
+        </div>
+    </div>
 
-        const i18n = {
-            bg: {
-                title: "⚡ EV Calc Pro (€)",
-                tariff: "Дневна: 0.150 € | Нощна: 0.088 €",
-                summer: "Лято (23-07)", winter: "Зима (22-06)", mStart: "Нач. час", mTarget: "Готова в", mRange: "Интервал",
-                curPct: "Текущ %", tarPct: "Желан %", cap: "Батерия (kWh)", pwr: "Мощност (kW)", cons: "Разход (kWh/100)",
-                fuelCons: "Разход Гориво (л/100)", fuelPrice: "Цена Гориво (€/л)", manKwh: "Общо kWh:", dateStart: "Начало", dateEnd: "Край / Готова в",
-                calc: "ИЗЧИСЛИ И ЗАПИШИ", calcOnly: "САМО ИЗЧИСЛИ", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 Дневник",
-                thPeriod: "Период", thTotal: "kWh", thAdded: "Пробег", thCost: "Цена (€)", thSaved: "Спестено (€)",
-                useFuel: "Изчисли сравнение с гориво", hintRes: "Резултат: ", finalPct: "Краен %: "
-            },
-            en: {
-                title: "⚡ EV Calc Pro (€)",
-                tariff: "Day: 0.150 € | Night: 0.088 €",
-                summer: "Summer (23-07)", winter: "Winter (22-06)", mStart: "Start At", mTarget: "Ready At", mRange: "Range",
-                curPct: "Current %", tarPct: "Target %", cap: "Battery (kWh)", pwr: "Power (kW)", cons: "Cons. (kWh/100)",
-                fuelCons: "Fuel Cons. (l/100)", fuelPrice: "Fuel Price (€/L)", manKwh: "Total kWh:", dateStart: "Start", dateEnd: "End / Ready At",
-                calc: "CALCULATE & SAVE", calcOnly: "CALC ONLY", import: "📥 eWeLink", export: "⬇ Excel", history: "📋 History",
-                thPeriod: "Period", thTotal: "kWh", thAdded: "Range", thCost: "Cost (€)", thSaved: "Saved (€)",
-                useFuel: "Calculate fuel comparison", hintRes: "Result: ", finalPct: "Final %: "
+    <!-- Battery & Charging -->
+    <div class="card" id="batteryCard">
+        <div class="card-title" id="txt-battery-title">Батерия и зарядно</div>
+        <div class="grid-2" style="margin-bottom:10px">
+            <div class="field">
+                <label id="txt-curPct">Текущ заряд (%)</label>
+                <input type="number" id="curPct" value="20" min="0" max="100">
+                <span class="field-error" id="err-curPct"></span>
+            </div>
+            <div class="field" id="tarPctGroup">
+                <label id="txt-tarPct">Желан заряд (%)</label>
+                <input type="number" id="tarPct" value="80" min="0" max="100">
+                <span class="field-error" id="err-tarPct"></span>
+            </div>
+        </div>
+        <div class="grid-3">
+            <div class="field">
+                <label id="txt-cap">Батерия (kWh)</label>
+                <input type="number" id="cap" value="84" min="1">
+                <span class="field-error" id="err-cap"></span>
+            </div>
+            <div class="field">
+                <label id="txt-pwr">Зарядно (kW)</label>
+                <input type="number" id="pwr" value="2.3" min="0.1" step="0.1">
+                <span class="field-error" id="err-pwr"></span>
+            </div>
+            <div class="field">
+                <label id="txt-eff">Ефективност (%)</label>
+                <input type="number" id="chargeEff" value="90" min="50" max="100">
+            </div>
+        </div>
+    </div>
+
+    <!-- kWh mode -->
+    <div class="card" id="kwhCard" style="display:none">
+        <div class="card-title" id="txt-kwh-title">Ръчно въвеждане на kWh</div>
+        <div class="field">
+            <label id="txt-manualKwh">Общо kWh за зареждане</label>
+            <input type="number" id="manualKwh" placeholder="45.5" min="0">
+            <span class="field-error" id="err-kwh"></span>
+        </div>
+    </div>
+
+    <!-- Consumption & Fuel -->
+    <div class="card">
+        <div class="card-title" id="txt-economy-title">Разход и сравнение</div>
+
+        <label class="check-row active" id="checkRowCons">
+            <input type="checkbox" id="useCons" checked onchange="updateToggles()">
+            <span id="txt-use-cons">Изчисли добавен пробег</span>
+        </label>
+        <div id="consSection">
+            <div class="field" style="max-width:220px">
+                <label id="txt-cons">Разход на тока (kWh/100km)</label>
+                <input type="number" id="cons" value="18" min="1" step="0.5">
+            </div>
+        </div>
+
+        <div style="height:14px"></div>
+
+        <label class="check-row active" id="checkRowFuel">
+            <input type="checkbox" id="useFuel" checked onchange="updateToggles()">
+            <span id="txt-use-fuel">Изчисли спестяване спрямо гориво</span>
+        </label>
+        <div id="fuelSection">
+            <div class="grid-2" style="max-width:440px">
+                <div class="field">
+                    <label id="txt-fuel-cons">Разход гориво (л/100km)</label>
+                    <input type="number" id="fuelCons" value="7" min="1" step="0.5">
+                </div>
+                <div class="field">
+                    <label id="txt-fuel-price">Цена гориво (€/л)</label>
+                    <input type="number" id="fuelPrice" value="1.33" min="0" step="0.01" oninput="saveSettings()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date/Time -->
+    <div class="card">
+        <div class="card-title" id="txt-schedule-title">Период на зареждане</div>
+        <div class="grid-2">
+            <div class="field">
+                <label id="txt-date1">Начална дата и час</label>
+                <input type="date" id="d1">
+                <input type="time" id="t1" value="22:00" style="margin-top:6px">
+            </div>
+            <div class="field" id="endGroup" style="display:none">
+                <label id="txt-date2">Крайна дата и час</label>
+                <input type="date" id="d2">
+                <input type="time" id="t2" value="08:00" style="margin-top:6px">
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+        <button class="btn btn-secondary" id="txt-calcOnly" onclick="calculate(false)">САМО ИЗЧИСЛИ</button>
+        <button class="btn btn-primary" id="txt-calcSave" onclick="calculate(true)">ИЗЧИСЛИ И ЗАПИШИ</button>
+    </div>
+
+    <!-- Error banner -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Result -->
+    <div class="result-box" id="resultBox">
+        <div class="result-period" id="resultPeriod"></div>
+        <div class="result-grid" id="resultGrid"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+        <button class="btn-sm" id="txt-import-btn" onclick="openImportModal()">📥 eWeLink</button>
+        <button class="btn-sm" id="txt-export" onclick="exportCSV()">⬇ Excel / CSV</button>
+        <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="handleImportFile(this)">
+    </div>
+
+    <!-- eWeLink Import Modal -->
+    <div class="modal-overlay" id="importModal" onclick="closeImportModalOutside(event)">
+        <div class="modal">
+            <div class="modal-title" id="modal-title">📥 Импорт от eWeLink</div>
+            <div class="modal-sub" id="modal-sub">
+                Отвори eWeLink → устройство → История → Изтегли CSV.<br>
+                Форматът трябва да е <code>date,kwh,cost</code> по редове.<br>
+                Всеки ден с потребление над 0 kWh ще бъде импортиран като отделно зареждане.
+            </div>
+
+            <div class="import-error" id="importError"></div>
+
+            <div class="import-drop" id="importDrop"
+                onclick="document.getElementById('fileInput').click()"
+                ondragover="onDragOver(event)"
+                ondragleave="onDragLeave(event)"
+                ondrop="onDrop(event)">
+                <div class="import-drop-icon">📂</div>
+                <div class="import-drop-text" id="modal-drop-text">Кликни или провлачи CSV файл тук</div>
+                <div class="import-drop-sub" id="modal-drop-sub">History_*.csv от eWeLink</div>
+            </div>
+
+            <div class="import-preview" id="importPreview">
+                <div class="preview-stat">
+                    <span class="lbl" id="modal-prev-file">Файл</span>
+                    <span class="val" id="prevFile">—</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="lbl" id="modal-prev-days">Дни с данни</span>
+                    <span class="val" id="prevDays">—</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="lbl" id="modal-prev-total">Общо kWh</span>
+                    <span class="val" id="prevTotal">—</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="lbl" id="modal-prev-period">Период</span>
+                    <span class="val" id="prevPeriod">—</span>
+                </div>
+            </div>
+
+            <div class="import-groups" id="importGroups">
+                <div class="import-group-title" id="modal-sessions-title">Открити сесии (групирани по дата)</div>
+                <div class="import-session-list" id="importSessionList"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" style="flex:1;padding:11px" onclick="closeImportModal()" id="modal-cancel">Затвори</button>
+                <button class="btn btn-primary" style="flex:2;padding:11px" onclick="confirmImport()" id="modal-confirm">Импортирай избраните</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-card card">
+        <div class="history-header">
+            <span class="history-title" id="txt-history">📋 Дневник</span>
+            <span class="history-summary" id="historySummary"></span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th id="th-period">Период</th>
+                        <th id="th-kwh">kWh</th>
+                        <th id="th-range">Пробег</th>
+                        <th id="th-cost">Цена (€)</th>
+                        <th id="th-saved">Спестено (€)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────
+let season = 'summer';
+let mode = 'start';
+let lang = localStorage.getItem('ev_lang') || 'bg';
+
+// ─── i18n ────────────────────────────────────────────────────
+const T = {
+    bg: {
+        subtitle: 'Калкулатор за домашно зареждане',
+        tariffTitle: 'Тарифи и часове',
+        nightLabel: '🌙 Нощна тарифа', dayLabel: '☀️ Дневна тарифа',
+        nightPrice: 'Цена (€/kWh)', nightFrom: 'От (час)', nightTo: 'До (час)',
+        dayPrice: 'Цена (€/kWh)', dayFrom: 'От (час)', dayTo: 'До (час)',
+        seasonMode: 'Сезон и режим',
+        summer: '🌞 Лято (23–07)', winter: '❄️ Зима (22–06)',
+        mStart: 'Начален час', mTarget: 'Готова в', mRange: 'Интервал', mKwh: 'kWh',
+        batteryTitle: 'Батерия и зарядно',
+        curPct: 'Текущ заряд (%)', tarPct: 'Желан заряд (%)',
+        cap: 'Батерия (kWh)', pwr: 'Зарядно (kW)', eff: 'Ефективност (%)',
+        kwhTitle: 'Ръчно въвеждане на kWh', manualKwh: 'Общо kWh за зареждане',
+        economyTitle: 'Разход и сравнение',
+        useCons: 'Изчисли добавен пробег', cons: 'Разход на тока (kWh/100km)',
+        useFuel: 'Изчисли спестяване спрямо гориво',
+        fuelCons: 'Разход гориво (л/100km)', fuelPrice: 'Цена гориво (€/л)',
+        scheduleTitle: 'Период на зареждане',
+        date1: 'Начална дата и час', date1target: 'Готова до (дата и час)',
+        date2: 'Крайна дата и час',
+        calcOnly: 'САМО ИЗЧИСЛИ', calcSave: 'ИЗЧИСЛИ И ЗАПИШИ',
+        exportBtn: '⬇ Excel / CSV',
+        history: '📋 Дневник',
+        thPeriod: 'Период', thKwh: 'kWh', thRange: 'Пробег', thCost: 'Цена (€)', thSaved: 'Спестено (€)',
+        totalRow: 'Общо',
+        resKwh: 'kWh заредени', resCost: 'Цена', resSaved: 'Спестено', resRange: 'Пробег', resPct: 'Краен %',
+        periodFrom: 'от', periodTo: 'до',
+        errCurPct: 'Въведи стойност между 0 и 100',
+        errTarPct: 'Желаният % трябва да е по-голям от текущия',
+        errTarPctRange: 'Въведи стойност между 0 и 100',
+        errCap: 'Въведи капацитет на батерията',
+        errPwr: 'Въведи мощност на зарядното',
+        errKwh: 'Въведи положителна стойност за kWh',
+        errDate: 'Краят трябва да е след началото',
+        emptyCons: 'Нищо записано все още.',
+        summaryCost: 'Общо изразходвано', summarySaved: 'Общо спестено',
+        importBtn: '📥 eWeLink',
+        modalTitle: '📥 Импорт от eWeLink',
+        modalSub: 'Отвори eWeLink → устройство → История → Изтегли CSV.<br>Форматът трябва да е <code>date,kwh,cost</code> по редове.<br>Всеки ден с потребление над 0 kWh ще бъде импортиран като отделно зареждане.',
+        modalDropText: 'Кликни или провлачи CSV файл тук',
+        modalDropSub: 'History_*.csv от eWeLink',
+        modalPrevFile: 'Файл', modalPrevDays: 'Дни с данни', modalPrevTotal: 'Общо kWh', modalPrevPeriod: 'Период',
+        modalSessionsTitle: 'Открити сесии (групирани по дата)',
+        modalCancel: 'Затвори', modalConfirm: 'Импортирай избраните',
+        importErrFormat: 'Файлът не изглежда като eWeLink CSV. Очаква се заглавен ред: date,kwh,cost',
+        importErrEmpty: 'Файлът не съдържа дни с потребление над 0 kWh.',
+        importSuccess: 'сесии импортирани успешно!',
+        importSkipped: 'Моля избери поне една сесия.',
+        importSource: 'eWeLink',
+        modalSessionsHourly: 'сесии от почасови данни',
+    },
+    en: {
+        subtitle: 'Home EV charging calculator',
+        tariffTitle: 'Tariffs & hours',
+        nightLabel: '🌙 Night tariff', dayLabel: '☀️ Day tariff',
+        nightPrice: 'Price (€/kWh)', nightFrom: 'From (h)', nightTo: 'To (h)',
+        dayPrice: 'Price (€/kWh)', dayFrom: 'From (h)', dayTo: 'To (h)',
+        seasonMode: 'Season & mode',
+        summer: '🌞 Summer (23–07)', winter: '❄️ Winter (22–06)',
+        mStart: 'Start at', mTarget: 'Ready at', mRange: 'Range', mKwh: 'kWh',
+        batteryTitle: 'Battery & charger',
+        curPct: 'Current charge (%)', tarPct: 'Target charge (%)',
+        cap: 'Battery (kWh)', pwr: 'Charger (kW)', eff: 'Efficiency (%)',
+        kwhTitle: 'Manual kWh entry', manualKwh: 'Total kWh to charge',
+        economyTitle: 'Consumption & comparison',
+        useCons: 'Calculate added range', cons: 'EV consumption (kWh/100km)',
+        useFuel: 'Compare with fuel cost',
+        fuelCons: 'Fuel consumption (l/100km)', fuelPrice: 'Fuel price (€/L)',
+        scheduleTitle: 'Charging period',
+        date1: 'Start date & time', date1target: 'Ready by (date & time)',
+        date2: 'End date & time',
+        calcOnly: 'CALCULATE ONLY', calcSave: 'CALCULATE & SAVE',
+        exportBtn: '⬇ Export CSV',
+        history: '📋 History',
+        thPeriod: 'Period', thKwh: 'kWh', thRange: 'Range', thCost: 'Cost (€)', thSaved: 'Saved (€)',
+        totalRow: 'Total',
+        resKwh: 'kWh added', resCost: 'Cost', resSaved: 'Saved', resRange: 'Range', resPct: 'Final %',
+        periodFrom: 'from', periodTo: 'to',
+        errCurPct: 'Enter a value between 0 and 100',
+        errTarPct: 'Target % must be greater than current %',
+        errTarPctRange: 'Enter a value between 0 and 100',
+        errCap: 'Enter battery capacity',
+        errPwr: 'Enter charger power',
+        errKwh: 'Enter a positive kWh value',
+        errDate: 'End time must be after start time',
+        emptyCons: 'No entries yet.',
+        summaryCost: 'Total spent', summarySaved: 'Total saved',
+        importBtn: '📥 eWeLink',
+        modalTitle: '📥 Import from eWeLink',
+        modalSub: 'Open eWeLink → device → History → Download CSV.<br>Expected format: <code>date,kwh,cost</code> rows.<br>Each day with consumption above 0 kWh will be imported as a separate session.',
+        modalDropText: 'Click or drag CSV file here',
+        modalDropSub: 'History_*.csv from eWeLink',
+        modalPrevFile: 'File', modalPrevDays: 'Days with data', modalPrevTotal: 'Total kWh', modalPrevPeriod: 'Period',
+        modalSessionsTitle: 'Detected sessions (grouped by date)',
+        modalCancel: 'Close', modalConfirm: 'Import selected',
+        importErrFormat: 'File does not look like an eWeLink CSV. Expected header: date,kwh,cost',
+        importErrEmpty: 'File contains no days with consumption above 0 kWh.',
+        importSuccess: 'sessions imported successfully!',
+        importSkipped: 'Please select at least one session.',
+        importSource: 'eWeLink',
+        modalSessionsHourly: 'sessions from hourly data',
+    }
+};
+
+// ─── Lang ────────────────────────────────────────────────────
+function setLang(l) {
+    lang = l;
+    localStorage.setItem('ev_lang', l);
+    document.getElementById('btn-bg').classList.toggle('active', l === 'bg');
+    document.getElementById('btn-en').classList.toggle('active', l === 'en');
+    updateUI();
+}
+
+function t(key) { return T[lang][key] || key; }
+
+function updateUI() {
+    const map = {
+        'txt-subtitle': 'subtitle',
+        'txt-tariff-title': 'tariffTitle',
+        'txt-night-label': 'nightLabel', 'txt-day-label': 'dayLabel',
+        'txt-night-price': 'nightPrice', 'txt-night-from': 'nightFrom', 'txt-night-to': 'nightTo',
+        'txt-day-price': 'dayPrice', 'txt-day-from': 'dayFrom', 'txt-day-to': 'dayTo',
+        'txt-season-mode': 'seasonMode',
+        's_summer': 'summer', 's_winter': 'winter',
+        'm_start': 'mStart', 'm_target': 'mTarget', 'm_range': 'mRange', 'm_kwh': 'mKwh',
+        'txt-battery-title': 'batteryTitle',
+        'txt-curPct': 'curPct', 'txt-tarPct': 'tarPct',
+        'txt-cap': 'cap', 'txt-pwr': 'pwr', 'txt-eff': 'eff',
+        'txt-kwh-title': 'kwhTitle', 'txt-manualKwh': 'manualKwh',
+        'txt-economy-title': 'economyTitle',
+        'txt-use-cons': 'useCons', 'txt-cons': 'cons',
+        'txt-use-fuel': 'useFuel',
+        'txt-fuel-cons': 'fuelCons', 'txt-fuel-price': 'fuelPrice',
+        'txt-schedule-title': 'scheduleTitle',
+        'txt-date2': 'date2',
+        'txt-calcOnly': 'calcOnly', 'txt-calcSave': 'calcSave',
+        'txt-export': 'exportBtn',
+        'txt-import-btn': 'importBtn',
+        'txt-history': 'history',
+        'th-period': 'thPeriod', 'th-kwh': 'thKwh', 'th-range': 'thRange',
+        'th-cost': 'thCost', 'th-saved': 'thSaved',
+    };
+    for (const [id, key] of Object.entries(map)) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = t(key);
+    }
+    document.getElementById('txt-date1').innerText = mode === 'target' ? t('date1target') : t('date1');
+    // Modal texts (innerHTML for code tags)
+    const modalSub = document.getElementById('modal-sub');
+    if (modalSub) modalSub.innerHTML = t('modalSub');
+    const modalMap = {
+        'modal-title': 'modalTitle', 'modal-drop-text': 'modalDropText',
+        'modal-drop-sub': 'modalDropSub', 'modal-prev-file': 'modalPrevFile',
+        'modal-prev-days': 'modalPrevDays', 'modal-prev-total': 'modalPrevTotal',
+        'modal-prev-period': 'modalPrevPeriod', 'modal-sessions-title': 'modalSessionsTitle',
+        'modal-cancel': 'modalCancel', 'modal-confirm': 'modalConfirm',
+    };
+    for (const [id, key] of Object.entries(modalMap)) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = t(key);
+    }
+    renderHistory();
+}
+
+// ─── Season ──────────────────────────────────────────────────
+function setSeason(s) {
+    season = s;
+    document.getElementById('s_summer').classList.toggle('active', s === 'summer');
+    document.getElementById('s_winter').classList.toggle('active', s === 'winter');
+
+    // Sync night hours to tariff inputs
+    const nightFrom = s === 'summer' ? 23 : 22;
+    const nightTo   = s === 'summer' ? 7  : 6;
+    document.getElementById('nightFrom').value = nightFrom;
+    document.getElementById('nightTo').value   = nightTo;
+    syncDayDisplay();
+    saveSettings();
+}
+
+function syncDayDisplay() {
+    const nf = parseInt(document.getElementById('nightFrom').value);
+    const nt = parseInt(document.getElementById('nightTo').value);
+    document.getElementById('dayFromDisp').value = nt;
+    document.getElementById('dayToDisp').value   = nf;
+}
+
+// ─── Mode ────────────────────────────────────────────────────
+function setMode(m) {
+    mode = m;
+    ['start','target','range','kwh'].forEach(id => {
+        document.getElementById('m_' + id).classList.toggle('active', m === id);
+    });
+    const isKwh = m === 'kwh';
+    document.getElementById('batteryCard').style.display = isKwh ? 'none' : 'block';
+    document.getElementById('kwhCard').style.display     = isKwh ? 'block' : 'none';
+    document.getElementById('tarPctGroup').style.display = (m === 'start' || m === 'target') ? 'block' : 'none';
+    document.getElementById('endGroup').style.display    = (m === 'range' || m === 'kwh') ? 'block' : 'none';
+    document.getElementById('txt-date1').innerText = m === 'target' ? t('date1target') : t('date1');
+}
+
+// ─── Toggles ─────────────────────────────────────────────────
+function updateToggles() {
+    const useCons = document.getElementById('useCons').checked;
+    const useFuel = document.getElementById('useFuel').checked;
+    document.getElementById('consSection').classList.toggle('disabled-section', !useCons);
+    document.getElementById('fuelSection').classList.toggle('disabled-section', !useFuel);
+    document.getElementById('checkRowCons').classList.toggle('active', useCons);
+    document.getElementById('checkRowFuel').classList.toggle('active', useFuel);
+    saveSettings();
+}
+
+// ─── Persist settings ────────────────────────────────────────
+function saveSettings() {
+    const s = {
+        nightPrice: document.getElementById('nightPrice').value,
+        dayPrice:   document.getElementById('dayPrice').value,
+        nightFrom:  document.getElementById('nightFrom').value,
+        nightTo:    document.getElementById('nightTo').value,
+        fuelPrice:  document.getElementById('fuelPrice').value,
+        useFuel:    document.getElementById('useFuel').checked,
+        useCons:    document.getElementById('useCons').checked,
+    };
+    localStorage.setItem('ev_settings', JSON.stringify(s));
+    syncDayDisplay();
+}
+
+function loadSettings() {
+    const raw = localStorage.getItem('ev_settings');
+    if (!raw) return;
+    try {
+        const s = JSON.parse(raw);
+        if (s.nightPrice) document.getElementById('nightPrice').value = s.nightPrice;
+        if (s.dayPrice)   document.getElementById('dayPrice').value   = s.dayPrice;
+        if (s.nightFrom)  document.getElementById('nightFrom').value  = s.nightFrom;
+        if (s.nightTo)    document.getElementById('nightTo').value    = s.nightTo;
+        if (s.fuelPrice)  document.getElementById('fuelPrice').value  = s.fuelPrice;
+        if (s.useFuel !== undefined) document.getElementById('useFuel').checked = s.useFuel;
+        if (s.useCons !== undefined) document.getElementById('useCons').checked = s.useCons;
+    } catch(e) {}
+}
+
+// ─── Validation ───────────────────────────────────────────────
+function clearErrors() {
+    ['err-curPct','err-tarPct','err-cap','err-pwr','err-kwh'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = '';
+    });
+    ['curPct','tarPct','cap','pwr','manualKwh'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('error');
+    });
+    const banner = document.getElementById('errorBanner');
+    banner.innerText = '';
+    banner.classList.remove('show');
+}
+
+function showError(fieldId, errId, msg) {
+    const field = document.getElementById(fieldId);
+    const errEl = document.getElementById(errId);
+    if (field)  field.classList.add('error');
+    if (errEl)  errEl.innerText = msg;
+}
+
+function showBanner(msg) {
+    const banner = document.getElementById('errorBanner');
+    banner.innerText = msg;
+    banner.classList.add('show');
+}
+
+function validate() {
+    clearErrors();
+    let ok = true;
+
+    if (mode !== 'kwh') {
+        const cur = parseFloat(document.getElementById('curPct').value);
+        const cap = parseFloat(document.getElementById('cap').value);
+        const pwr = parseFloat(document.getElementById('pwr').value);
+
+        if (isNaN(cur) || cur < 0 || cur > 100) {
+            showError('curPct', 'err-curPct', t('errCurPct')); ok = false;
+        }
+
+        if (mode === 'start' || mode === 'target') {
+            const tar = parseFloat(document.getElementById('tarPct').value);
+            if (isNaN(tar) || tar < 0 || tar > 100) {
+                showError('tarPct', 'err-tarPct', t('errTarPctRange')); ok = false;
+            } else if (!isNaN(cur) && tar <= cur) {
+                showError('tarPct', 'err-tarPct', t('errTarPct')); ok = false;
             }
-        };
+        }
+        if (isNaN(cap) || cap <= 0) {
+            showError('cap', 'err-cap', t('errCap')); ok = false;
+        }
+        if (isNaN(pwr) || pwr <= 0) {
+            showError('pwr', 'err-pwr', t('errPwr')); ok = false;
+        }
+    } else {
+        const kwh = parseFloat(document.getElementById('manualKwh').value);
+        if (isNaN(kwh) || kwh <= 0) {
+            showError('manualKwh', 'err-kwh', t('errKwh')); ok = false;
+        }
+    }
 
-        function updateToggles() {
-            const fuelCheck = document.getElementById('useFuel').checked;
-            const consCheck = document.getElementById('useCons').checked;
-            document.getElementById('fuelInputs').classList.toggle('disabled-field', !fuelCheck);
-            document.getElementById('cons').classList.toggle('disabled-field', !consCheck);
-            localStorage.setItem('ev_opt_fuel', fuelCheck);
-            localStorage.setItem('ev_opt_cons', consCheck);
+    if (mode === 'range' || mode === 'kwh') {
+        const s = new Date(document.getElementById('d1').value + ' ' + document.getElementById('t1').value);
+        const e = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
+        if (e <= s) { showBanner(t('errDate')); ok = false; }
+    }
+
+    return ok;
+}
+
+// ─── Core calculation ─────────────────────────────────────────
+function calculate(shouldSave) {
+    if (!validate()) return;
+
+    const nightFrom   = parseInt(document.getElementById('nightFrom').value);
+    const nightTo     = parseInt(document.getElementById('nightTo').value);
+    const nightPrice  = parseFloat(document.getElementById('nightPrice').value);
+    const dayPrice    = parseFloat(document.getElementById('dayPrice').value);
+    const eff         = parseFloat(document.getElementById('chargeEff').value) / 100 || 0.9;
+
+    const d1 = document.getElementById('d1').value;
+    const t1v = document.getElementById('t1').value;
+    const startOrTarget = new Date(d1 + ' ' + t1v);
+
+    let start, end, totalKwh, finalPct;
+
+    if (mode === 'kwh') {
+        totalKwh = parseFloat(document.getElementById('manualKwh').value);
+        start = startOrTarget;
+        end   = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
+        finalPct = null;
+    } else {
+        const cap    = parseFloat(document.getElementById('cap').value);
+        const pwr    = parseFloat(document.getElementById('pwr').value);
+        const curPct = parseFloat(document.getElementById('curPct').value);
+
+        if (mode === 'start') {
+            const tarPct = parseFloat(document.getElementById('tarPct').value);
+            totalKwh = ((tarPct - curPct) / 100) * cap / eff;
+            start    = startOrTarget;
+            end      = new Date(start.getTime() + (totalKwh / pwr) * 3600000);
+            finalPct = tarPct;
+        } else if (mode === 'target') {
+            const tarPct = parseFloat(document.getElementById('tarPct').value);
+            totalKwh = ((tarPct - curPct) / 100) * cap / eff;
+            end      = startOrTarget;
+            start    = new Date(end.getTime() - (totalKwh / pwr) * 3600000);
+            finalPct = tarPct;
+        } else { // range
+            start    = startOrTarget;
+            end      = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
+            totalKwh = ((end - start) / 3600000) * pwr * eff;
+            finalPct = curPct + (totalKwh * eff / cap * 100);
+        }
+    }
+
+    // Split kWh by tariff (minute-by-minute)
+    let nightKwh = 0, dayKwh = 0;
+    const durationMin = Math.max(1, Math.abs(end - start) / 60000);
+    const kwhPerMin   = totalKwh / durationMin;
+    let curr = new Date(Math.min(+start, +end));
+    const finish = new Date(Math.max(+start, +end));
+
+    while (curr < finish) {
+        const h = curr.getHours();
+        const isNight = (nightFrom > nightTo)
+            ? (h >= nightFrom || h < nightTo)
+            : (h >= nightFrom && h < nightTo);
+        if (isNight) nightKwh += kwhPerMin;
+        else         dayKwh   += kwhPerMin;
+        curr.setMinutes(curr.getMinutes() + 1);
+    }
+
+    const cost = (nightKwh * nightPrice) + (dayKwh * dayPrice);
+
+    let range = 0;
+    if (document.getElementById('useCons').checked) {
+        const cons = parseFloat(document.getElementById('cons').value);
+        range = (totalKwh * eff / cons) * 100;
+    }
+
+    let saved = 0;
+    if (document.getElementById('useFuel').checked && document.getElementById('useCons').checked && range > 0) {
+        const fp  = parseFloat(document.getElementById('fuelPrice').value);
+        const fc  = parseFloat(document.getElementById('fuelCons').value);
+        saved = (range / 100) * fc * fp - cost;
+    }
+
+    const locale = lang === 'bg' ? 'bg-BG' : 'en-GB';
+    const fmt = dt => dt.toLocaleString(locale, {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+    const entry = {
+        id:       Date.now(),
+        start:    fmt(start),
+        end:      fmt(end),
+        total:    totalKwh.toFixed(2),
+        range:    range.toFixed(0),
+        cost:     cost.toFixed(2),
+        saved:    saved.toFixed(2),
+        finalPct: finalPct !== null ? Math.min(100, finalPct).toFixed(1) : null,
+        nightKwh: nightKwh.toFixed(2),
+        dayKwh:   dayKwh.toFixed(2),
+    };
+
+    showResult(entry);
+    if (shouldSave) saveEntry(entry);
+}
+
+// ─── Show result ──────────────────────────────────────────────
+function showResult(entry) {
+    const box = document.getElementById('resultBox');
+    box.classList.add('show');
+
+    document.getElementById('resultPeriod').innerHTML =
+        `<strong>${entry.start}</strong> ${t('periodTo')} <strong>${entry.end}</strong>` +
+        (entry.finalPct ? ` &nbsp;·&nbsp; ${t('resPct')}: <strong style="color:var(--accent)">${entry.finalPct}%</strong>` : '');
+
+    const useCons = document.getElementById('useCons').checked;
+    const useFuel = document.getElementById('useFuel').checked;
+
+    let stats = [
+        { val: entry.total + ' kWh', lbl: t('resKwh') + ` (🌙 ${entry.nightKwh} / ☀️ ${entry.dayKwh})` },
+        { val: '€ ' + entry.cost, lbl: t('resCost') },
+    ];
+    if (useCons)  stats.push({ val: '+' + entry.range + ' km', lbl: t('resRange') });
+    if (useFuel && useCons) stats.push({ val: '€ ' + entry.saved, lbl: t('resSaved') });
+
+    document.getElementById('resultGrid').innerHTML = stats.map(s =>
+        `<div class="result-stat"><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
+    ).join('');
+}
+
+// ─── History ──────────────────────────────────────────────────
+function saveEntry(entry) {
+    let history = getHistory();
+    history.unshift(entry);
+    localStorage.setItem('ev_history_v2', JSON.stringify(history.slice(0, 100)));
+    renderHistory();
+}
+
+function getHistory() {
+    return JSON.parse(localStorage.getItem('ev_history_v2') || '[]');
+}
+
+function deleteEntry(id) {
+    const history = getHistory().filter(e => e.id !== id);
+    localStorage.setItem('ev_history_v2', JSON.stringify(history));
+    renderHistory();
+}
+
+function renderHistory() {
+    const history = getHistory();
+    const tbody = document.getElementById('historyBody');
+
+    if (history.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${t('emptyCons')}</td></tr>`;
+        document.getElementById('historySummary').innerHTML = '';
+        return;
+    }
+
+    const totKwh  = history.reduce((a, e) => a + parseFloat(e.total), 0);
+    const totCost = history.reduce((a, e) => a + parseFloat(e.cost), 0);
+    const totSave = history.reduce((a, e) => a + parseFloat(e.saved), 0);
+
+    document.getElementById('historySummary').innerHTML =
+        `${t('summaryCost')}: <span>€ ${totCost.toFixed(2)}</span>  ·  ${t('summarySaved')}: <span>€ ${totSave.toFixed(2)}</span>`;
+
+    const rows = history.map(e => {
+        const savedNeg = parseFloat(e.saved) < 0;
+        return `<tr>
+            <td class="td-period">${e.start}<br><span class="sub">${e.end}</span></td>
+            <td>${e.total} <span class="badge-pct">${e.finalPct ? e.finalPct + '%' : '—'}</span></td>
+            <td>${e.range > 0 ? '+' + e.range + ' km' : '—'}</td>
+            <td>€ ${e.cost}</td>
+            <td><span class="badge-saved ${savedNeg ? 'negative' : ''}">€ ${e.saved}</span></td>
+            <td><button class="btn-del" onclick="deleteEntry(${e.id})">✕</button></td>
+        </tr>`;
+    }).join('');
+
+    const totRow = `<tr class="totals-row">
+        <td>${t('totalRow')}</td>
+        <td>${totKwh.toFixed(1)} kWh</td>
+        <td>—</td>
+        <td>€ ${totCost.toFixed(2)}</td>
+        <td>€ ${totSave.toFixed(2)}</td>
+        <td></td>
+    </tr>`;
+
+    tbody.innerHTML = rows + totRow;
+}
+
+// ─── eWeLink Import ───────────────────────────────────────────
+let parsedSessions = [];
+
+function openImportModal() {
+    parsedSessions = [];
+    document.getElementById('importPreview').classList.remove('show');
+    document.getElementById('importGroups').classList.remove('show');
+    document.getElementById('importError').classList.remove('show');
+    document.getElementById('importError').innerText = '';
+    document.getElementById('importModal').classList.add('show');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.remove('show');
+}
+
+function closeImportModalOutside(e) {
+    if (e.target === document.getElementById('importModal')) closeImportModal();
+}
+
+function onDragOver(e) {
+    e.preventDefault();
+    document.getElementById('importDrop').classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+    document.getElementById('importDrop').classList.remove('drag-over');
+}
+
+function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('importDrop').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) processImportFile(file);
+}
+
+function handleImportFile(input) {
+    const file = input.files[0];
+    if (file) processImportFile(file);
+    input.value = '';
+}
+
+function processImportFile(file) {
+    const errEl = document.getElementById('importError');
+    errEl.classList.remove('show');
+    errEl.innerText = '';
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        const result = parseEwelinkCSV(text, file.name);
+        if (result.error) {
+            errEl.innerText = result.error;
+            errEl.classList.add('show');
+            return;
+        }
+        renderImportPreview(result, file.name);
+    };
+    reader.readAsText(file, 'utf-8');
+}
+
+function parseEwelinkCSV(text, filename) {
+    // Strip BOM
+    const clean = text.replace(/^\uFEFF/, '').trim();
+    const lines = clean.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+    if (lines.length < 2) return { error: t('importErrFormat') };
+
+    const header = lines[0].toLowerCase();
+    if (!header.includes('kwh') && !header.includes('kwh')) {
+        return { error: t('importErrFormat') };
+    }
+
+    const cols = lines[0].split(',').map(c => c.trim().toLowerCase().replace(/['"]/g, ''));
+
+    // ── FORMAT A: hourly  →  data, time, consumption/kwh  ──────
+    // e.g.  2026-01-05,22:00-23:00,2.18
+    const isHourly = cols.some(c => c === 'data' || c === 'date') && cols.some(c => c === 'time');
+
+    if (isHourly) {
+        const dateIdx = cols.findIndex(c => c === 'data' || c === 'date');
+        const timeIdx = cols.findIndex(c => c === 'time');
+        const kwhIdx  = cols.findIndex(c => c.includes('kwh') || c.includes('consumption'));
+        if (dateIdx === -1 || timeIdx === -1 || kwhIdx === -1) return { error: t('importErrFormat') };
+
+        // Parse all hourly slots into {startDt, endDt, kwh}
+        const slots = [];
+        for (let i = 1; i < lines.length; i++) {
+            const parts = lines[i].split(',');
+            if (parts.length < 3) continue;
+            const rawDate = parts[dateIdx].trim().replace(/['"]/g, '').replace(/\//g, '-');
+            const rawTime = parts[timeIdx].trim().replace(/['"]/g, '');
+            const kwh     = parseFloat(parts[kwhIdx]);
+            if (!rawDate || !rawTime || isNaN(kwh) || kwh <= 0) continue;
+
+            // time format: "22:00-23:00" or "23:00-24:00"
+            const tParts = rawTime.split('-');
+            if (tParts.length < 2) continue;
+            const startH = parseInt(tParts[0].split(':')[0]);
+            let   endH   = parseInt(tParts[1].split(':')[0]);
+
+            // 23:00-24:00 → treat endH as midnight next day
+            const startDt = new Date(rawDate + 'T00:00:00');
+            startDt.setHours(startH, 0, 0, 0);
+            const endDt = new Date(+startDt);
+            if (endH === 24) { endDt.setDate(endDt.getDate() + 1); endDt.setHours(0, 0, 0, 0); }
+            else              { endDt.setHours(endH, 0, 0, 0); }
+
+            if (isNaN(startDt.getTime())) continue;
+            slots.push({ startDt, endDt, kwh });
         }
 
-        function saveFuelPrice() {
-            localStorage.setItem('ev_last_fuel_price', document.getElementById('fuelPrice').value);
-        }
+        if (slots.length === 0) return { error: t('importErrEmpty') };
 
-        function setLanguage(l) { lang = l; localStorage.setItem('ev_lang', l); updateUI(); }
+        // Group consecutive slots into charging sessions
+        // Gap threshold: if next slot starts more than 1h after current slot ends → new session
+        const GAP_MS = 2 * 3600000; // 2-hour gap = new session
+        const sessions = [];
+        let sess = null;
 
-        function updateUI() {
-            const t = i18n[lang];
-            document.getElementById('txt-title').innerText = t.title;
-            document.getElementById('txt-tariff').innerText = t.tariff;
-            document.getElementById('s_summer').innerText = t.summer;
-            document.getElementById('s_winter').innerText = t.winter;
-            document.getElementById('m_start').innerText = t.mStart;
-            document.getElementById('m_target').innerText = t.mTarget;
-            document.getElementById('m_range').innerText = t.mRange;
-            document.getElementById('txt-curPct').innerText = t.curPct;
-            document.getElementById('txt-tarPct').innerText = t.tarPct;
-            document.getElementById('txt-cap').innerText = t.cap;
-            document.getElementById('txt-pwr').innerText = t.pwr;
-            document.getElementById('txt-cons').innerText = t.cons;
-            document.getElementById('txt-fuel-cons').innerText = t.fuelCons;
-            document.getElementById('txt-fuel-price').innerText = t.fuelPrice;
-            document.getElementById('txt-manualKwh').innerText = t.manKwh;
-            document.getElementById('txt-use-fuel').innerText = t.useFuel;
-            document.getElementById('txt-date1').innerText = (mode === 'target') ? t.dateEnd : t.dateStart;
-            document.getElementById('txt-date2').innerText = t.dateEnd;
-            document.getElementById('txt-calcBtn').innerText = t.calc;
-            document.getElementById('txt-calcOnly').innerText = t.calcOnly;
-            document.getElementById('txt-import').innerText = t.import;
-            document.getElementById('txt-export').innerText = t.export;
-            document.getElementById('txt-history-title').innerText = t.history;
-            document.getElementById('th-period').innerText = t.thPeriod;
-            document.getElementById('th-total').innerText = t.thTotal;
-            document.getElementById('th-added').innerText = t.thAdded;
-            document.getElementById('th-cost').innerText = t.thCost;
-            document.getElementById('th-saved').innerText = t.thSaved;
-            renderHistory();
-        }
-
-        function setSeason(s) {
-            season = s;
-            document.getElementById('s_summer').classList.toggle('active', s === 'summer');
-            document.getElementById('s_winter').classList.toggle('active', s === 'winter');
-        }
-
-        function setMode(m) {
-            mode = m;
-            document.getElementById('m_start').classList.toggle('active', m === 'start');
-            document.getElementById('m_target').classList.toggle('active', m === 'target');
-            document.getElementById('m_range').classList.toggle('active', m === 'range');
-            document.getElementById('m_kwh').classList.toggle('active', m === 'kwh');
-            
-            document.getElementById('batteryFields').style.display = m === 'kwh' ? 'none' : 'block';
-            document.getElementById('tarPctGroup').style.display = (m === 'start' || m === 'target') ? 'block' : 'none';
-            document.getElementById('kwhField').style.display = m === 'kwh' ? 'block' : 'none';
-            document.getElementById('endGroup').style.display = (m === 'range' || m === 'kwh') ? 'block' : 'none';
-            updateUI();
-        }
-
-        function calculate(shouldSave = true) {
-            const startOrTarget = new Date(document.getElementById('d1').value + ' ' + document.getElementById('t1').value);
-            let start, end, totalKwh, targetPct;
-            const cap = parseFloat(document.getElementById('cap').value);
-            const pwr = parseFloat(document.getElementById('pwr').value);
-            const curPct = parseFloat(document.getElementById('curPct').value);
-
-            if (mode === 'start') {
-                targetPct = parseFloat(document.getElementById('tarPct').value);
-                totalKwh = ((targetPct - curPct) / 100) * cap;
-                start = startOrTarget;
-                end = new Date(start.getTime() + (totalKwh / pwr) * 3600000);
-            } else if (mode === 'target') {
-                targetPct = parseFloat(document.getElementById('tarPct').value);
-                totalKwh = ((targetPct - curPct) / 100) * cap;
-                end = startOrTarget;
-                start = new Date(end.getTime() - (totalKwh / pwr) * 3600000);
-            } else if (mode === 'range') {
-                start = startOrTarget;
-                end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
-                totalKwh = ((end - start) / 3600000) * pwr;
-                targetPct = curPct + (totalKwh / cap * 100);
-            } else { // kWh mode
-                totalKwh = parseFloat(document.getElementById('manualKwh').value) || 0;
-                start = startOrTarget;
-                end = new Date(document.getElementById('d2').value + ' ' + document.getElementById('t2').value);
-                // В kWh режим батерията не е задължителна в UI, но я ползваме за процента ако я има
-                targetPct = curPct + (totalKwh / cap * 100);
+        for (const slot of slots) {
+            if (!sess) {
+                sess = { startDt: slot.startDt, endDt: slot.endDt, kwh: slot.kwh, slots: [slot] };
+            } else {
+                const gap = slot.startDt - sess.endDt;
+                if (gap <= GAP_MS) {
+                    // continue same session
+                    sess.endDt = slot.endDt;
+                    sess.kwh  += slot.kwh;
+                    sess.slots.push(slot);
+                } else {
+                    sessions.push(sess);
+                    sess = { startDt: slot.startDt, endDt: slot.endDt, kwh: slot.kwh, slots: [slot] };
+                }
             }
-            
-            processCalculation(start, end, totalKwh, targetPct, shouldSave);
         }
+        if (sess) sessions.push(sess);
 
-        function processCalculation(start, end, totalKwh, finalPct, shouldSave) {
-            const nightLimit = season === 'summer' ? { s: 23, e: 7 } : { s: 22, e: 6 };
+        // For each session compute real night/day split from actual slot times
+        const nightFrom = parseInt(document.getElementById('nightFrom').value);
+        const nightTo   = parseInt(document.getElementById('nightTo').value);
+        const nightPrice = parseFloat(document.getElementById('nightPrice').value);
+        const dayPrice   = parseFloat(document.getElementById('dayPrice').value);
+
+        sessions.forEach((s, idx) => {
             let nightKwh = 0, dayKwh = 0;
-            const minutes = Math.max(1, Math.abs(end - start) / 60000);
-            const kwhPerMin = totalKwh / minutes;
-            let curr = new Date(Math.min(start, end));
-            const finish = new Date(Math.max(start, end));
+            s.slots.forEach(slot => {
+                const h = slot.startDt.getHours();
+                const isNight = (nightFrom > nightTo)
+                    ? (h >= nightFrom || h < nightTo)
+                    : (h >= nightFrom && h < nightTo);
+                if (isNight) nightKwh += slot.kwh; else dayKwh += slot.kwh;
+            });
+            s.nightKwh = nightKwh;
+            s.dayKwh   = dayKwh;
+            s.cost     = nightKwh * nightPrice + dayKwh * dayPrice;
+            s.id       = s.startDt.getTime() + idx;
+        });
 
-            while (curr < finish) {
-                let h = curr.getHours();
-                let isNight = (nightLimit.s > nightLimit.e) ? (h >= nightLimit.s || h < nightLimit.e) : (h >= nightLimit.s && h < nightLimit.e);
+        const firstDate = sessions[0].startDt;
+        const lastDate  = sessions[sessions.length - 1].endDt;
+        return { sessions, firstDate, lastDate, isHourly: true };
+    }
+
+    // ── FORMAT B: daily  →  date, kwh, cost ────────────────────
+    const dateIdx = cols.findIndex(c => c === 'date' || c === 'data');
+    const kwhIdx  = cols.findIndex(c => c === 'kwh' || c.includes('consumption'));
+    if (dateIdx === -1 || kwhIdx === -1) return { error: t('importErrFormat') };
+
+    const sessions = [];
+    let firstDate = null, lastDate = null;
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.toLowerCase().startsWith('total')) continue;
+        const parts = line.split(',');
+        if (parts.length < 2) continue;
+        const rawDate = (parts[dateIdx] || '').trim().replace(/['"]/g, '').replace(/\//g, '-');
+        const kwh     = parseFloat((parts[kwhIdx] || '0').trim());
+        if (!rawDate || isNaN(kwh) || kwh <= 0) continue;
+        const d = new Date(rawDate + 'T00:00:00');
+        if (isNaN(d.getTime())) continue;
+        if (!firstDate || d < firstDate) firstDate = d;
+        if (!lastDate  || d > lastDate)  lastDate  = d;
+        sessions.push({ startDt: d, endDt: null, kwh, nightKwh: null, dayKwh: null, cost: null, id: d.getTime() });
+    }
+
+    if (sessions.length === 0) return { error: t('importErrEmpty') };
+    return { sessions, firstDate, lastDate, isHourly: false };
+}
+
+function renderImportPreview(result, filename) {
+    parsedSessions = result.sessions;
+    const totalKwh = result.sessions.reduce((a, s) => a + s.kwh, 0);
+    const locale = lang === 'bg' ? 'bg-BG' : 'en-GB';
+    const fmtDate = d => d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const fmtDt   = d => d.toLocaleString(locale, { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+
+    document.getElementById('prevFile').innerText = filename.length > 34 ? filename.slice(0, 32) + '…' : filename;
+    document.getElementById('prevDays').innerText = result.sessions.length + (result.isHourly ? ` (${t('modalSessionsHourly')})` : '');
+    document.getElementById('prevTotal').innerText = totalKwh.toFixed(2) + ' kWh';
+    document.getElementById('prevPeriod').innerText = fmtDate(result.firstDate) + ' – ' + fmtDate(result.lastDate);
+    document.getElementById('importPreview').classList.add('show');
+
+    // Build session list
+    const list = document.getElementById('importSessionList');
+    list.innerHTML = result.sessions.map(s => {
+        let label;
+        if (result.isHourly) {
+            label = fmtDt(s.startDt) + ' → ' + fmtDt(s.endDt);
+        } else {
+            label = fmtDate(s.startDt);
+        }
+        const costStr = s.cost !== null ? ` · €${s.cost.toFixed(2)}` : '';
+        return `<div class="import-session">
+            <input type="checkbox" id="sess_${s.id}" checked>
+            <span class="import-session-date">${label}</span>
+            <span class="import-session-kwh">${s.kwh.toFixed(2)} kWh${costStr}</span>
+        </div>`;
+    }).join('');
+    document.getElementById('importGroups').classList.add('show');
+}
+
+function confirmImport() {
+    const errEl = document.getElementById('importError');
+    errEl.classList.remove('show');
+
+    const selected = parsedSessions.filter(s => {
+        const cb = document.getElementById('sess_' + s.id);
+        return cb && cb.checked;
+    });
+
+    if (selected.length === 0) {
+        errEl.innerText = t('importSkipped');
+        errEl.classList.add('show');
+        return;
+    }
+
+    const nightPrice = parseFloat(document.getElementById('nightPrice').value);
+    const dayPrice   = parseFloat(document.getElementById('dayPrice').value);
+    const nightFrom  = parseInt(document.getElementById('nightFrom').value);
+    const nightTo    = parseInt(document.getElementById('nightTo').value);
+    const eff        = parseFloat(document.getElementById('chargeEff').value) / 100 || 0.9;
+    const pwr        = parseFloat(document.getElementById('pwr').value) || 2.3;
+    const useCons    = document.getElementById('useCons').checked;
+    const useFuel    = document.getElementById('useFuel').checked;
+    const cons       = parseFloat(document.getElementById('cons').value) || 18;
+    const fuelCons   = parseFloat(document.getElementById('fuelCons').value) || 7;
+    const fuelPrice  = parseFloat(document.getElementById('fuelPrice').value) || 1.33;
+
+    const locale = lang === 'bg' ? 'bg-BG' : 'en-GB';
+    const fmtDt  = dt => dt.toLocaleString(locale, { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+
+    selected.forEach(s => {
+        let start, end, nightKwh, dayKwh, cost;
+
+        if (s.startDt && s.endDt && s.nightKwh !== null) {
+            // ── Hourly format: use real times and pre-calculated split ──
+            start    = s.startDt;
+            end      = s.endDt;
+            nightKwh = s.nightKwh;
+            dayKwh   = s.dayKwh;
+            cost     = s.cost;
+        } else {
+            // ── Daily format: estimate start at nightFrom, split by minute ──
+            start = new Date(s.startDt || s.date);
+            start.setHours(nightFrom, 0, 0, 0);
+            const durationH = s.kwh / (pwr * eff);
+            end = new Date(start.getTime() + durationH * 3600000);
+
+            nightKwh = 0; dayKwh = 0;
+            const durationMin = Math.max(1, (end - start) / 60000);
+            const kwhPerMin = s.kwh / durationMin;
+            let curr = new Date(+start);
+            while (curr < end) {
+                const h = curr.getHours();
+                const isNight = (nightFrom > nightTo)
+                    ? (h >= nightFrom || h < nightTo)
+                    : (h >= nightFrom && h < nightTo);
                 if (isNight) nightKwh += kwhPerMin; else dayKwh += kwhPerMin;
                 curr.setMinutes(curr.getMinutes() + 1);
             }
-
-            const costEV = (nightKwh * 0.088) + (dayKwh * 0.150);
-            let addedRange = 0;
-            if (document.getElementById('useCons').checked) {
-                addedRange = (totalKwh / parseFloat(document.getElementById('cons').value)) * 100;
-            }
-            
-            let saved = 0;
-            if (document.getElementById('useFuel').checked && document.getElementById('useCons').checked) {
-                const fPrice = parseFloat(document.getElementById('fuelPrice').value);
-                const fCons = parseFloat(document.getElementById('fuelCons').value);
-                saved = ((addedRange / 100) * fCons * fPrice) - costEV;
-            }
-
-            const result = {
-                id: Date.now(),
-                start: start.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
-                end: end.toLocaleString(lang==='bg'?'bg-BG':'en-GB', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}),
-                total: totalKwh.toFixed(1),
-                range: addedRange.toFixed(0),
-                cost: costEV.toFixed(2),
-                saved: saved.toFixed(2),
-                finalPct: finalPct.toFixed(1)
-            };
-
-            const hBox = document.getElementById('calc-hint');
-            hBox.style.display = 'block';
-            const pctText = result.finalPct > 100 ? "100% (Full)" : result.finalPct + "%";
-            
-            hBox.innerHTML = `
-                <strong>${i18n[lang].hintRes}</strong><br>
-                ${result.start} - ${result.end}<br>
-                ${result.total} kWh (+${result.range} km) | 
-                <span class="final-pct-badge">${i18n[lang].finalPct} ${pctText}</span><br>
-                Cost: € ${result.cost} | Saved: € ${result.saved}
-            `;
-
-            if (shouldSave) saveToHistory(result);
+            cost = nightKwh * nightPrice + dayKwh * dayPrice;
         }
 
-        function saveToHistory(item) {
-            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            history.unshift(item);
-            localStorage.setItem('ev_euro_v1', JSON.stringify(history.slice(0, 50)));
-            renderHistory();
+        let range = 0, saved = 0;
+        if (useCons) {
+            range = (s.kwh * eff / cons) * 100;
+            if (useFuel) saved = (range / 100) * fuelCons * fuelPrice - cost;
         }
 
-        function renderHistory() {
-            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            document.getElementById('historyBody').innerHTML = history.map(i => `
-                <tr>
-                    <td>${i.start}<br><small>${i.end}</small></td>
-                    <td><b>${i.total}</b><br><small>${i.finalPct}%</small></td>
-                    <td>+${i.range} km</td>
-                    <td>€ ${i.cost}</td>
-                    <td><span class="badge-save">€ ${i.saved}</span></td>
-                    <td><button class="btn-delete" onclick="deleteEntry(${i.id})">✕</button></td>
-                </tr>
-            `).join('');
-        }
+        const entry = {
+            id:       s.id + Math.floor(Math.random() * 1000),
+            start:    fmtDt(start),
+            end:      fmtDt(end),
+            total:    s.kwh.toFixed(2),
+            range:    range.toFixed(0),
+            cost:     cost.toFixed(2),
+            saved:    saved.toFixed(2),
+            finalPct: null,
+            nightKwh: nightKwh.toFixed(2),
+            dayKwh:   dayKwh.toFixed(2),
+            source:   t('importSource'),
+        };
+        saveEntry(entry);
+    });
 
-        function deleteEntry(id) {
-            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            localStorage.setItem('ev_euro_v1', JSON.stringify(history.filter(i => i.id !== id)));
-            renderHistory();
-        }
+    closeImportModal();
+    const btn = document.getElementById('txt-import-btn');
+    const orig = btn.innerText;
+    btn.innerText = '✓ ' + selected.length + ' ' + t('importSuccess');
+    btn.style.color = 'var(--accent)';
+    btn.style.borderColor = 'var(--accent)';
+    setTimeout(() => {
+        btn.innerText = orig;
+        btn.style.color = '';
+        btn.style.borderColor = '';
+    }, 3000);
+}
 
-        function exportToCSV() {
-            let history = JSON.parse(localStorage.getItem('ev_euro_v1') || '[]');
-            let csv = "\uFEFFStart,End,kWh,FinalPct,Range,Cost,Saved\n";
-            history.forEach(i => csv += `"${i.start}","${i.end}",${i.total},${i.finalPct},${i.range},${i.cost},${i.saved}\n`);
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `EV_Report.csv`;
-            link.click();
-        }
+// ─── Export ───────────────────────────────────────────────────
+function exportCSV() {
+    const history = getHistory();
+    let csv = '\uFEFFStart,End,kWh,Night kWh,Day kWh,Final %,Range (km),Cost (€),Saved (€)\n';
+    history.forEach(e => {
+        csv += `"${e.start}","${e.end}",${e.total},${e.nightKwh||''},${e.dayKwh||''},${e.finalPct||''},${e.range},${e.cost},${e.saved}\n`;
+    });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    link.download = 'EV_Report.csv';
+    link.click();
+}
 
-        // Инициализация
-        document.getElementById('d1').valueAsDate = new Date();
-        document.getElementById('d2').valueAsDate = new Date();
-        
-        const fuelSaved = localStorage.getItem('ev_opt_fuel');
-        const consSaved = localStorage.getItem('ev_opt_cons');
-        const lastPrice = localStorage.getItem('ev_last_fuel_price');
-        
-        if (fuelSaved !== null) document.getElementById('useFuel').checked = (fuelSaved === 'true');
-        if (consSaved !== null) document.getElementById('useCons').checked = (consSaved === 'true');
-        if (lastPrice !== null) document.getElementById('fuelPrice').value = lastPrice;
+// ─── Init ─────────────────────────────────────────────────────
+document.getElementById('d1').valueAsDate = new Date();
+document.getElementById('d2').valueAsDate = new Date();
+document.getElementById('btn-bg').classList.toggle('active', lang === 'bg');
+document.getElementById('btn-en').classList.toggle('active', lang === 'en');
 
-        updateToggles();
-        updateUI();
-    </script>
+loadSettings();
+syncDayDisplay();
+updateToggles();
+updateUI();
+
+// Live sync night hours → day display
+document.getElementById('nightFrom').addEventListener('input', syncDayDisplay);
+document.getElementById('nightTo').addEventListener('input', syncDayDisplay);
+</script>
 </body>
 </html>
